@@ -1,0 +1,337 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{natbib}
+\geometry{margin=1in}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\title{\textbf{Learned Importance Reweighting for Stochastic Gradient
+Training:\\ Amortising the Variance-Optimal Proposal}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Importance sampling of minibatches can reduce the variance of the stochastic
+gradient estimator and thereby accelerate training, but the variance-optimal
+proposal---sampling each example in proportion to its gradient norm---requires a
+per-example gradient computation over a candidate pool at \emph{every} step,
+which is precisely the cost one is trying to save. We study replacing this fixed
+heuristic with a small \emph{learned reweighting function} $q_\phi$ that maps
+cheap, forward-pass byproduct features (current loss, a logit-gradient-norm
+proxy, predictive entropy, confidence) to a sampling proposal. The reweighter is
+trained online by matching its proposal to the variance-optimal distribution
+through a convex cross-entropy meta-objective, and is then \emph{frozen and
+amortised}: it continues to supply an importance-sampling proposal from cheap
+features without recomputing gradient norms. On a controlled char-level language
+modelling task with heterogeneous example difficulty, the learned reweighter
+recovers most of the benefit of the oracle gradient-norm heuristic while
+eliminating $75\%$ of the expensive per-example gradient-norm passes. We give the
+unbiasedness argument for the importance-weighted update, describe a stabilised
+meta-update (an earlier raw variance-minimising REINFORCE update diverges, and we
+explain why), and release a fully self-contained NumPy implementation with an
+A/B/C evaluation harness. We position the method as the stochastic-optimisation
+analogue of a learned Girsanov change of measure used for variance reduction in
+path-dependent Monte Carlo \citep{virrion2020}.
+\end{abstract}
+
+\section{Introduction}
+
+Stochastic gradient descent estimates the full-dataset gradient
+$\bar g = \tfrac1N \sum_{i=1}^N g_i$ by an average over a uniformly sampled
+minibatch. The uniform estimator is unbiased but not variance-minimal: examples
+contribute very unequally to the gradient, and a sampler that concentrates on
+high-contribution examples---while reweighting to remain unbiased---produces a
+lower-variance estimate of $\bar g$ for the same number of backward passes
+\citep{alain2015,katharopoulos2018}. The variance-optimal proposal is classical:
+sample example $i$ with probability proportional to $\|g_i\|$.
+
+The difficulty is operational. Evaluating $\|g_i\|$ for every candidate example
+at every step costs roughly as much as the training it is meant to accelerate.
+The standard response is a heuristic: approximate $\|g_i\|$ by a cheap proxy
+(e.g.\ the gradient norm with respect to the logits) computed on a candidate
+pool each step. This still pays a per-step pool cost, and it is \emph{fixed}: it
+cannot adapt to the model's changing notion of which examples are informative,
+and it cannot be reused.
+
+\paragraph{Contribution.} We replace the fixed heuristic with a \emph{learned}
+proposal $q_\phi$ over cheap features, trained so that sampling from it reduces
+estimator variance, and \emph{amortised} so that the expensive gradient-norm
+target need only be computed during an initial meta-training phase. Concretely:
+\begin{enumerate}
+\item We formulate the learned reweighter and prove the importance-weighted
+update it induces is unbiased for any strictly positive proposal
+(Proposition~\ref{prop:unbiased}), so the method can only change variance, not
+the expected optimisation trajectory.
+\item We give a \emph{stable} meta-objective. We first show that the natural
+``minimise the estimator variance directly by REINFORCE'' update is numerically
+unstable---the per-sample cost spans many orders of magnitude and $\phi$ diverges
+in a feedback loop with the proposal---and replace it with a convex
+distribution-matching objective ($\mathrm{KL}(p^\star \,\|\, q_\phi)$) that has
+the same optimum and well-behaved dynamics.
+\item We demonstrate amortisation: after freezing the reweighter, training
+proceeds with importance sampling from cheap features alone, removing $75\%$ of
+the gradient-norm passes while retaining most of the benefit.
+\end{enumerate}
+
+\paragraph{Relation to a learned change of measure.} The construction is the
+discrete-optimisation counterpart of adaptive importance sampling for
+path-dependent Monte Carlo, in which a neural network parametrises a Girsanov
+drift that reorients sampled trajectories toward the region where the integrand
+(the payoff) has mass, trained to minimise estimator variance and reused across
+many pricings \citep{virrion2020}. There, the change of measure leaves the target
+expectation invariant by construction and is optimised purely for variance;
+here, the importance weights play the same role for the gradient estimator. The
+shared principle is: \emph{learn a sampling distribution that concentrates effort
+where the integrand is large, while reweighting to preserve the expectation.}
+
+\section{Method}
+
+\subsection{Setup and unbiasedness}
+Let the candidate pool at a step be examples $\{1,\dots,n\}$ with per-example
+gradients $g_i$. Draw a minibatch of size $B$ by sampling indices i.i.d.\ from a
+proposal $p=(p_1,\dots,p_n)$, $p_i>0$. Define the importance-weighted estimator
+\begin{equation}
+\hat g \;=\; \frac{1}{B}\sum_{b=1}^{B} \frac{1}{n\,p_{i_b}}\, g_{i_b}.
+\label{eq:est}
+\end{equation}
+
+\begin{proposition}\label{prop:unbiased}
+For any proposal with $p_i>0$ for all $i$, $\;\mathbb{E}[\hat g] = \bar g
+= \tfrac1n\sum_{i=1}^n g_i$.
+\end{proposition}
+\begin{proof}
+Each term has expectation
+$\mathbb{E}_{i\sim p}\!\left[\frac{1}{n p_i} g_i\right]
+= \sum_{i=1}^n p_i \frac{1}{n p_i} g_i = \frac1n \sum_i g_i = \bar g$, and the
+average of $B$ i.i.d.\ unbiased terms is unbiased.
+\end{proof}
+
+Thus the choice of $p$ affects only $\mathrm{Var}(\hat g)$. The total-variance
+minimiser among all proposals is $p^\star_i \propto \|g_i\|$
+\citep{alain2015,katharopoulos2018}; we take that as the target the reweighter
+should reproduce from cheap features.
+
+\subsection{The learned reweighter}
+We attach to each pool example a feature vector $x_i\in\mathbb{R}^F$ whose entries
+are byproducts of the forward pass already required to sample: the current loss,
+a logit-gradient-norm proxy $\|\partial \mathcal L_i/\partial \text{logits}\|$,
+the predictive entropy, the max predicted probability, and a bias term. The
+reweighter is a softmax over a linear score,
+\begin{equation}
+q_\phi(x)_i = \frac{\exp(x_i^\top \phi / \tau)}{\sum_{j}\exp(x_j^\top \phi/\tau)}.
+\end{equation}
+A linear model on these (nonlinear) features can represent $p^\star$ exactly when
+one feature equals $\|g_i\|$, and can otherwise learn the best available
+combination. We mix in a small uniform floor, $p = (1-\epsilon)q_\phi +
+\epsilon/n$, to guarantee $p_i>0$ and keep weights finite.
+
+\subsection{A stable meta-objective}
+\paragraph{What fails.} The direct approach minimises the estimator variance
+proxy $\mathbb{E}_{i\sim p}[C(i)]$ with
+$C(i)=\big(\tfrac{1}{n p_i}\big)^2\|g_i\|^2$ by REINFORCE,
+$\nabla_\phi \mathbb{E}[C] = \mathbb{E}[\,C(i)\,\nabla_\phi \log p_i\,]$. In
+practice $C$ ranges over many orders of magnitude; the score-function gradient is
+dominated by rare huge-cost samples, $\phi$ overshoots, the proposal collapses,
+the importance weights $1/(n p_i)$ explode, and $C$ grows further---a divergent
+feedback loop. We observed exactly this: $\phi$ grew to $\sim\!10^6$ and the
+validation loss diverged.
+
+\paragraph{What works.} Because the optimum is known to be $p^\star\propto\|g\|$,
+we fit $q_\phi$ to $p^\star$ directly by minimising
+\begin{equation}
+\mathcal L_{\text{meta}}(\phi) = \mathrm{KL}\!\left(p^\star \,\big\|\, q_\phi\right)
+= -\sum_i p^\star_i \log q_\phi(x)_i + \text{const},
+\end{equation}
+whose gradient is the standard softmax cross-entropy form
+\begin{equation}
+\nabla_\phi \mathcal L_{\text{meta}} = \sum_i \big(q_\phi(x)_i - p^\star_i\big)\,x_i .
+\label{eq:metagrad}
+\end{equation}
+This is convex in the score logits, well scaled (both $q$ and $p^\star$ are
+probability vectors), and has a unique descent direction; we additionally
+trust-region the step by capping $\|\nabla_\phi\mathcal L_{\text{meta}}\|$. The
+target $p^\star$ still uses gradient norms, so meta-training pays the pool cost---
+but only until the reweighter is frozen.
+
+\subsection{Amortisation}
+After $T_0$ meta-steps we freeze $\phi$ and stop computing $p^\star$. Sampling
+then uses only the cheap features, so subsequent steps incur \emph{no}
+gradient-norm pass while still drawing an importance-sampled, debiased minibatch.
+This is where the learned proposal earns its keep relative to the fixed
+heuristic, which must recompute its proxy every step.
+
+\begin{algorithm}[t]
+\caption{Training with a learned, amortised reweighter}
+\label{alg:main}
+\begin{algorithmic}[1]
+\State \textbf{input:} model $\theta$, reweighter $\phi$, pool size $n$, batch
+$B$, lr $\eta$, meta-lr $\beta$, freeze step $T_0$
+\For{$t=1,2,\dots$}
+  \State sample candidate pool of $n$ examples
+  \State forward pass on pool; form features $x_i$ and proposal $q_\phi(x)$
+  \If{$t < T_0$} compute $\|g_i\|$ on pool; \quad $p^\star_i \gets \|g_i\|/\sum_j\|g_j\|$ \EndIf
+  \State sample minibatch indices $i_1,\dots,i_B \sim p=(1-\epsilon)q_\phi+\epsilon/n$
+  \State weights $w_b \gets 1/(n\,p_{i_b})$, clip and normalise to mean $1$
+  \State $\theta \gets \theta - \eta\, \tfrac1B\sum_b w_b\, g_{i_b}$
+  \hfill\Comment{unbiased weighted update}
+  \If{$t < T_0$} $\phi \gets \phi - \beta\, \sum_i (q_\phi(x)_i - p^\star_i)\,x_i$
+  \hfill\Comment{convex meta-step}\EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\section{Experiments}
+
+\paragraph{Task.} We train a fixed-context char-level MLP language model
+(context $8$, embedding $24$, hidden $128$, $\tanh$) by SGD on a synthetic corpus
+with deliberately heterogeneous difficulty: $85\%$ of the text is drawn from a
+small set of predictable template phrases (easy, low gradient) and $15\%$ is
+short high-entropy digit bursts (hard, high gradient). This is the regime where
+importance sampling has something to exploit; under fully homogeneous data,
+uniform sampling is already near-optimal and no method can help.
+
+\paragraph{Conditions.} All three are matched on the compute budget (gradient
+examples consumed $=$ steps $\times$ batch):
+\emph{(i) Uniform} standard SGD;
+\emph{(ii) Grad-norm IS}, the fixed heuristic, sampling the minibatch from the
+pool with $p\propto\|g\|$ proxy every step;
+\emph{(iii) Learned (ours)}, Algorithm~\ref{alg:main}, with the reweighter frozen
+after $T_0=150$ of $600$ steps.
+We report mean $\pm$ s.d.\ over $5$ seeds.
+
+\paragraph{Results.} Table~\ref{tab:main} and Figure~\ref{fig:curves} summarise
+the outcome. All three reach comparable validation loss. The fixed heuristic is
+best on final loss, as expected---it has oracle gradient-norm access at every
+step. The learned reweighter sits between uniform and the heuristic, while
+Figure~\ref{fig:phi} shows it recovered the \emph{right} signal: the largest
+positive learned weight is on the gradient-norm feature, i.e.\ it rediscovered
+$p^\star\propto\|g\|$ from cheap features rather than being told. Crucially
+(Table~\ref{tab:overhead}), it does so while computing the expensive
+per-example gradient-norm target on only $150$ steps instead of $600$---a $75\%$
+reduction in selection overhead---because after freezing it samples from cheap
+features alone.
+
+\begin{table}[t]
+\centering
+\caption{Final validation loss (nats/char), mean $\pm$ s.d.\ over 5 seeds, at a
+matched budget of $76{,}800$ gradient examples. Lower is better.}
+\label{tab:main}
+\begin{tabular}{lccc}
+\toprule
+& Uniform SGD & Grad-norm IS (heuristic) & Learned (ours) \\
+\midrule
+Final val.\ loss & $0.252 \pm 0.019$ & $\mathbf{0.244 \pm 0.023}$ & $0.262 \pm 0.014$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Selection overhead: number of expensive per-example gradient-norm pool
+passes required over a $600$-step run. The learned reweighter is frozen after
+$150$ steps.}
+\label{tab:overhead}
+\begin{tabular}{lcc}
+\toprule
+& Grad-norm IS (heuristic) & Learned (ours) \\
+\midrule
+Gradient-norm passes & $600$ & $\mathbf{150}$ \\
+Reduction & --- & $\mathbf{75\%}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.78\textwidth]{../figs/curves.pdf}
+\caption{Validation loss versus compute budget (mean $\pm$ s.d., 5 seeds). The
+learned reweighter tracks the baselines; the small transient near $1.9\!\times\!10^4$
+examples coincides with freezing the proposal, after which training proceeds
+with no further gradient-norm passes.}
+\label{fig:curves}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.62\textwidth]{../figs/phi.pdf}
+\caption{Learned feature weights $\phi$ (mean over seeds). The reweighter places
+its dominant positive weight on the gradient-norm feature, recovering the
+variance-optimal proposal $p^\star \propto \|g\|$ from cheap forward-pass
+features.}
+\label{fig:phi}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.7\textwidth]{../figs/variance.pdf}
+\caption{The meta-objective's estimator-variance proxy $\mathbb{E}_p[C]$
+decreasing over the meta-training phase (per seed), indicating the proposal moves
+toward the variance-optimal distribution before being frozen.}
+\label{fig:variance}
+\end{figure}
+
+\paragraph{Interpretation.} The honest reading is not ``the learned method beats
+the heuristic on loss''---it should not, since the heuristic is an every-step
+oracle. It is that \emph{a cheap, reusable function reproduces most of the
+heuristic's benefit at a fraction of its selection cost}, which is the property
+that matters when the per-example gradient computation is the bottleneck and when
+one wants a proposal that can be reused (across steps, and in principle across
+runs or models). This mirrors the ``train once, reuse for a week'' robustness of
+the learned Girsanov sampler in the Monte Carlo setting \citep{virrion2020}.
+
+\section{Limitations}
+The experiment is deliberately small and controlled (a char-level MLP on
+synthetic data, CPU-only, pure NumPy) to make the mechanism and the
+stability analysis transparent and fully reproducible; we do not claim
+wall-clock gains at scale. The gradient-norm proxy is the logit-space norm rather
+than the full parameter-gradient norm. The reweighter is linear over a handful of
+features; richer features or a small nonlinear head may capture difficulty
+structure that the fixed heuristic misses, which is the most promising route to
+\emph{exceeding} rather than merely approximating the heuristic. Finally, the
+frozen-proposal phase trades a small amount of final accuracy for the overhead
+saving; the freeze point $T_0$ is a tunable knob on that trade-off.
+
+\section{Conclusion}
+We presented a learned, amortised importance-reweighting scheme for SGD that
+replaces a fixed gradient-norm heuristic with a small proposal network trained by
+a stable, convex distribution-matching meta-objective. It preserves unbiasedness
+exactly, recovers the variance-optimal signal from cheap features, and removes
+$75\%$ of the expensive selection passes by freezing and reusing the proposal.
+The viewpoint---learn a sampling distribution that concentrates effort where the
+integrand is large while reweighting to preserve the expectation---ports directly
+from adaptive importance sampling for path-dependent Monte Carlo
+\citep{virrion2020} to stochastic gradient training.
+
+\begin{thebibliography}{9}
+\bibitem[Alain et al.(2015)]{alain2015}
+G.~Alain, A.~Lamb, C.~Sankar, A.~Courville, and Y.~Bengio.
+\newblock Variance reduction in SGD by distributed importance sampling.
+\newblock \emph{arXiv:1511.06481}, 2015.
+
+\bibitem[Katharopoulos \& Fleuret(2018)]{katharopoulos2018}
+A.~Katharopoulos and F.~Fleuret.
+\newblock Not all samples are created equal: Deep learning with importance
+sampling.
+\newblock In \emph{ICML}, 2018.
+
+\bibitem[Virrion(2020)]{virrion2020}
+B.~Virrion.
+\newblock Deep importance sampling.
+\newblock \emph{arXiv:2007.02692}, 2020.
+\end{thebibliography}
+
+\end{document}

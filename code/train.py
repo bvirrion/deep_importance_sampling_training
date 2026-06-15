@@ -18,9 +18,9 @@ within the pool are selected and weighted.
 """
 
 import numpy as np
-from model import CharLM
-from data import reweighter_features
-from reweighter import Reweighter
+from code.model import CharLM
+from code.data import reweighter_features
+from code.reweighter import Reweighter
 
 
 def evaluate(model, Xv, yv, batch=4096):

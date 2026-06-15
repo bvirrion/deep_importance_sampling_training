@@ -1,1 +1,6 @@
 *.pdf
+.venv/
+figs/
+
+train_log.txt
+results.json

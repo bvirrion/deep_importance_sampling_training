@@ -14,8 +14,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from data import make_corpus, build_examples, split
-from train import train_uniform, train_gradnorm, train_learned, evaluate
+from code.data import make_corpus, build_examples, split
+from code.train import train_uniform, train_gradnorm, train_learned, evaluate
 
 CONFIG = dict(
     n_chars=120_000,
