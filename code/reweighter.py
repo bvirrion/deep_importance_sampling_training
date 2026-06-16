@@ -46,34 +46,43 @@ import numpy as np
 class Reweighter:
     """Neural-network proposal over a pool of candidate examples.
 
-    Architecture (a one-hidden-layer MLP shared across pool examples):
+    Architecture (a three-hidden-layer MLP shared across pool examples):
 
-        h_i     = tanh(feats_i @ W1 + b1)        (H,)
-        score_i = h_i @ W2 + b2                   scalar
+        h1_i    = tanh(feats_i @ W1 + b1)         (H,)
+        h2_i    = tanh(h1_i   @ W2 + b2)          (H,)
+        h3_i    = tanh(h2_i   @ W3 + b3)          (H,)
+        score_i = h3_i @ W4 + b4                   scalar
         q_i     = softmax(score / temperature)_i  (over the candidate pool)
 
     The network maps the batch (its per-example feature vectors) to a probability
     measure q over the pool -- the change of measure for importance sampling. It
     can recover the gradient-norm proposal as a special case while being able to
-    learn richer difficulty structure that a linear model or fixed proxy cannot.
+    learn richer difficulty structure that a linear model or fixed proxy cannot;
+    the extra depth gives it the capacity to represent the more intricate
+    difficulty structure of a heterogeneous, harder task.
     """
 
-    def __init__(self, n_features=5, hidden=16, seed=0, temperature=1.0):
+    def __init__(self, n_features=5, hidden=32, seed=0, temperature=1.0):
         rng = np.random.default_rng(seed)
-        # Small-random init; He-ish scaling for the tanh hidden layer.
+        # Small-random init; He-ish 1/sqrt(fan_in) scaling for each tanh layer.
         self.W1 = rng.normal(0, 1.0 / np.sqrt(n_features), size=(n_features, hidden))
         self.b1 = np.zeros(hidden)
-        self.W2 = rng.normal(0, 1.0 / np.sqrt(hidden), size=(hidden, 1))
-        self.b2 = np.zeros(1)
+        self.W2 = rng.normal(0, 1.0 / np.sqrt(hidden), size=(hidden, hidden))
+        self.b2 = np.zeros(hidden)
+        self.W3 = rng.normal(0, 1.0 / np.sqrt(hidden), size=(hidden, hidden))
+        self.b3 = np.zeros(hidden)
+        self.W4 = rng.normal(0, 1.0 / np.sqrt(hidden), size=(hidden, 1))
+        self.b4 = np.zeros(1)
         self.temp = temperature
 
     # ---- forward -----------------------------------------------------------
     def _forward(self, feats):
         """Return (scores, cache) for a pool feature matrix feats (n, F)."""
-        pre_h = feats @ self.W1 + self.b1        # (n, H)
-        h = np.tanh(pre_h)                        # (n, H)
-        scores = (h @ self.W2 + self.b2)[:, 0]    # (n,)
-        cache = dict(feats=feats, h=h)
+        h1 = np.tanh(feats @ self.W1 + self.b1)   # (n, H)
+        h2 = np.tanh(h1 @ self.W2 + self.b2)      # (n, H)
+        h3 = np.tanh(h2 @ self.W3 + self.b3)      # (n, H)
+        scores = (h3 @ self.W4 + self.b4)[:, 0]   # (n,)
+        cache = dict(feats=feats, h1=h1, h2=h2, h3=h3)
         return scores, cache
 
     def scores(self, feats):
@@ -135,21 +144,29 @@ class Reweighter:
         e = np.exp(s)
         q = e / e.sum()                            # (n,)
 
-        h = cache["h"]                             # (n, H)
+        h1, h2, h3 = cache["h1"], cache["h2"], cache["h3"]   # (n, H) each
         n = len(q)
 
         # dL/dscore_i = q_i - p*_i  (softmax cross-entropy); temperature scales it.
         dscore = (q - target) / self.temp         # (n,)
 
-        # Backprop through score_i = h_i @ W2 + b2 and h = tanh(feats @ W1 + b1).
-        dW2 = h.T @ dscore[:, None]                # (H, 1)
-        db2 = np.array([dscore.sum()])             # (1,)
-        dh = dscore[:, None] * self.W2[:, 0][None, :]   # (n, H)
-        dpre_h = dh * (1.0 - h ** 2)               # tanh'
-        dW1 = feats.T @ dpre_h                      # (F, H)
-        db1 = dpre_h.sum(axis=0)                    # (H,)
+        # Backprop through score = h3 @ W4 + b4 and the three tanh layers.
+        dW4 = h3.T @ dscore[:, None]               # (H, 1)
+        db4 = np.array([dscore.sum()])             # (1,)
+        dh3 = dscore[:, None] * self.W4[:, 0][None, :]   # (n, H)
+        dpre3 = dh3 * (1.0 - h3 ** 2)              # tanh'
+        dW3 = h2.T @ dpre3                          # (H, H)
+        db3 = dpre3.sum(axis=0)                     # (H,)
+        dh2 = dpre3 @ self.W3.T                     # (n, H)
+        dpre2 = dh2 * (1.0 - h2 ** 2)              # tanh'
+        dW2 = h1.T @ dpre2                          # (H, H)
+        db2 = dpre2.sum(axis=0)                     # (H,)
+        dh1 = dpre2 @ self.W2.T                     # (n, H)
+        dpre1 = dh1 * (1.0 - h1 ** 2)              # tanh'
+        dW1 = feats.T @ dpre1                       # (F, H)
+        db1 = dpre1.sum(axis=0)                     # (H,)
 
-        grads = [dW1, db1, dW2, db2]
+        grads = [dW1, db1, dW2, db2, dW3, db3, dW4, db4]
         # global-norm trust region
         gn = np.sqrt(sum(float((g ** 2).sum()) for g in grads))
         scale = (max_norm / gn) if gn > max_norm else 1.0
@@ -157,6 +174,10 @@ class Reweighter:
         self.b1 -= lr * scale * db1
         self.W2 -= lr * scale * dW2
         self.b2 -= lr * scale * db2
+        self.W3 -= lr * scale * dW3
+        self.b3 -= lr * scale * db3
+        self.W4 -= lr * scale * dW4
+        self.b4 -= lr * scale * db4
 
         # variance proxy: dispersion of importance weights under q (lower = closer
         # to the optimal proposal). Reported for monitoring only.
@@ -174,8 +195,13 @@ class Reweighter:
         rediscovered p* proportional to ||g||.
         """
         _, cache = self._forward(feats)
-        h = cache["h"]                             # (n, H)
-        # d score / d feats = (1 - h^2) * W2  propagated through W1
-        dpre_h = (1.0 - h ** 2) * self.W2[:, 0][None, :]   # (n, H)
-        dfeats = dpre_h @ self.W1.T                # (n, F)
+        h1, h2, h3 = cache["h1"], cache["h2"], cache["h3"]   # (n, H) each
+        # d score / d feats: chain the Jacobian back through the three tanh layers.
+        dh3 = self.W4[:, 0][None, :]               # (n, H)  (score = h3 @ W4)
+        dpre3 = dh3 * (1.0 - h3 ** 2)              # (n, H)
+        dh2 = dpre3 @ self.W3.T                     # (n, H)
+        dpre2 = dh2 * (1.0 - h2 ** 2)             # (n, H)
+        dh1 = dpre2 @ self.W2.T                     # (n, H)
+        dpre1 = dh1 * (1.0 - h1 ** 2)             # (n, H)
+        dfeats = dpre1 @ self.W1.T                  # (n, F)
         return np.abs(dfeats).mean(axis=0)         # (F,)

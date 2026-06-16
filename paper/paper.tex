@@ -41,9 +41,10 @@ meta-trained in short bursts and otherwise supplies an importance-sampling
 proposal from cheap features alone---without recomputing gradient norms---each
 refresh warm-started from the previous state so it tracks the model's drifting
 notion of difficulty. On a controlled char-level language modelling task with
-heterogeneous example difficulty, the learned reweighter recovers most of the
-benefit of the oracle gradient-norm heuristic while eliminating $90\%$ of the
-expensive per-example gradient-norm passes. We give the
+graded, heterogeneous example difficulty, the learned reweighter statistically
+matches the oracle gradient-norm heuristic---and significantly beats uniform
+SGD on final loss---while eliminating $90\%$ of the expensive per-example
+gradient-norm passes. We give the
 unbiasedness argument for the importance-weighted update, describe a stabilised
 meta-update (an earlier raw variance-minimising REINFORCE update diverges, and we
 explain why), and release a fully self-contained NumPy implementation with an
@@ -113,6 +114,65 @@ same optimum. The shared principle is: \emph{learn a sampling distribution that
 concentrates effort where the integrand is large, while reweighting to preserve
 the expectation.}
 
+\section{Related Work}\label{sec:related}
+
+\paragraph{Importance sampling and variance reduction for SGD.}
+That non-uniform minibatch sampling can reduce the variance of the stochastic
+gradient---and that the variance-optimal proposal samples example $i$ in
+proportion to its gradient norm $\|g_i\|$---is by now classical.
+\citet{needell2014} and \citet{zhao2015} establish the result and its convergence
+consequences for convex objectives, and \citet{csiba2018} extend it to minibatch
+proposals. For deep networks, where exact per-example gradient norms are
+prohibitive, a literature of cheap surrogates has grown:
+\citet{alain2015} sample in proportion to gradient norms in a distributed setup;
+\citet{katharopoulos2017} use a biased upper bound and \citet{katharopoulos2018}
+an upper bound on the gradient norm computed from the loss layer alone;
+\citet{johnson2018} maintain a robust, periodically-corrected approximation
+(RAIS); and \citet{stich2017} give a \emph{safe} adaptive scheme that never does
+worse than uniform. \citet{faghri2020} study how gradient variance evolves during
+training and when importance sampling actually helps. Our cheap features (loss,
+a logit-gradient-norm proxy, entropy, confidence) are in this surrogate family;
+the novelty is that we do not commit to a \emph{fixed} surrogate but \emph{learn}
+a proposal over them and amortise it across steps.
+
+\paragraph{Online batch selection, curriculum, and hard-example mining.}
+A parallel line reweights or reorders examples by a notion of difficulty rather
+than by gradient-variance optimality. Curriculum learning \citep{bengio2009} and
+self-paced learning \citep{kumar2010} schedule easy-to-hard exposure; online
+batch selection \citep{loshchilov2015} prioritises high-loss examples; hard-example
+mining \citep{shrivastava2016} and the focal loss \citep{lin2017} up-weight hard
+examples in detection; and prioritized experience replay \citep{schaul2015} is the
+reinforcement-learning analogue, replaying high-error transitions with
+importance-weight correction---exactly the bias/variance bookkeeping we use here.
+Closest in spirit are methods that \emph{learn} the selection rule:
+\citet{jiang2018} train a ``MentorNet'' to weight examples, and \citet{fan2018}
+cast data selection as a learned ``teacher'' policy. We share the learned-selector
+idea but target the variance-optimal proposal with a convex, stable meta-objective
+and amortise it by periodic refresh, rather than learning an open-ended difficulty
+heuristic.
+
+\paragraph{Adaptive and neural importance sampling for Monte Carlo.}
+Outside optimisation, adaptively learning a change of measure to reduce
+estimator variance is a mature subject: the cross-entropy method
+\citep{rubinstein2004} fits a parametric sampler by minimising KL to the
+zero-variance target---structurally the same move as our $\mathrm{KL}(p^\star\,\|\,
+q_\phi)$ meta-objective---and adaptive importance sampling more broadly is
+surveyed by \citet{bugallo2017} (see also \citet{owen2013} for the underlying
+theory). Recent work parametrises the proposal with neural networks:
+\citet{mueller2019} learn an importance sampler with normalizing flows for
+rendering, and \citet{virrion2020} learns a Girsanov drift network for
+path-dependent option pricing. Our construction is the discrete-optimisation
+counterpart of the latter: a network maps a batch to a change of measure over the
+pool, trained purely for variance while leaving the target expectation invariant.
+
+\paragraph{Score-function estimators.}
+Our stability analysis (\S\ref{ssec:meta}) concerns the score-function /
+REINFORCE estimator \citep{williams1992}, whose notoriously high variance has
+driven a large body of control-variate and baseline techniques
+\citep{mnih2014}. We sidestep it entirely by replacing the
+variance-of-the-variance objective with a convex distribution-matching surrogate
+that has the same optimum.
+
 \section{Method}
 
 \subsection{Setup and unbiasedness}
@@ -145,20 +205,22 @@ We attach to each pool example a feature vector $x_i\in\mathbb{R}^F$ whose entri
 are byproducts of the forward pass already required to sample: the current loss,
 a logit-gradient-norm proxy $\|\partial \mathcal L_i/\partial \text{logits}\|$,
 the predictive entropy, the max predicted probability, and a bias term. The
-reweighter is a small neural network---a one-hidden-layer MLP shared across pool
-examples, followed by a softmax over the pool,
-\begin{equation}
-h_i = \tanh(W_1^\top x_i + b_1), \quad
-s_i = W_2^\top h_i + b_2, \quad
+reweighter is a small neural network---a three-hidden-layer MLP shared across
+pool examples, followed by a softmax over the pool,
+\begin{align}
+h_i^{(1)} &= \tanh(W_1^\top x_i + b_1), \qquad
+h_i^{(\ell)} = \tanh(W_\ell^\top h_i^{(\ell-1)} + b_\ell)\ \ (\ell=2,3), \nonumber\\
+s_i &= W_4^\top h_i^{(3)} + b_4, \qquad
 q_\phi(x)_i = \frac{\exp(s_i / \tau)}{\sum_{j}\exp(s_j/\tau)},
-\end{equation}
-with parameters $\phi=(W_1,b_1,W_2,b_2)$. The network maps the batch (its feature
-matrix) to a probability measure over the pool---the importance-sampling change
-of measure---mirroring the Girsanov-drift network of \citet{virrion2020}. It can
-represent $p^\star$ exactly when one feature equals $\|g_i\|$, and the hidden
-layer lets it capture difficulty structure that a linear score or fixed proxy
-cannot. We mix in a small uniform floor, $p = (1-\epsilon)q_\phi +
-\epsilon/n$, to guarantee $p_i>0$ and keep weights finite.
+\end{align}
+with parameters $\phi=(W_1,b_1,\dots,W_4,b_4)$. The network maps the batch (its
+feature matrix) to a probability measure over the pool---the importance-sampling
+change of measure---mirroring the Girsanov-drift network of \citet{virrion2020}.
+It can represent $p^\star$ exactly when one feature equals $\|g_i\|$, and the
+stacked hidden layers let it capture the graded difficulty structure of a
+heterogeneous task that a linear score or fixed proxy cannot. We mix in a small
+uniform floor, $p = (1-\epsilon)q_\phi + \epsilon/n$, to guarantee $p_i>0$ and
+keep weights finite.
 
 \subsection{A stable meta-objective}\label{ssec:meta}
 \paragraph{What fails.} The direct approach minimises the estimator variance
@@ -229,11 +291,18 @@ batch $B$, lr $\eta$, meta-lr $\beta$, refresh period $R$, burst length $T_b$
 
 \paragraph{Task.} We train a fixed-context char-level MLP language model
 (context $8$, embedding $24$, hidden $128$, $\tanh$) by SGD on a synthetic corpus
-with deliberately heterogeneous difficulty: $85\%$ of the text is drawn from a
-small set of predictable template phrases (easy, low gradient) and $15\%$ is
-short high-entropy digit bursts (hard, high gradient). This is the regime where
-importance sampling has something to exploit; under fully homogeneous data,
-uniform sampling is already near-optimal and no method can help.
+with deliberately heterogeneous difficulty. To make the difficulty
+\emph{graded}---a continuum rather than an easy/hard dichotomy---and the task
+globally harder, the corpus mixes three tiers: $45\%$ deterministic template
+phrases (easy, low gradient); $35\%$ stochastic-slot phrases, fixed skeletons
+whose subject/verb/object/place words are drawn at random from small pools, so
+context only partly predicts the next character (medium, intermediate gradient);
+and $20\%$ longer high-entropy alphanumeric bursts (hard, high gradient). The
+middle tier populates the difficulty spectrum between trivially-easy and
+near-random, and the reduced easy fraction means the task does not saturate
+within the training budget. This is the regime where importance sampling has the
+most to exploit; under fully homogeneous data, uniform sampling is already
+near-optimal and no method can help.
 
 \paragraph{Conditions.} All three are matched on the compute budget (gradient
 examples consumed $=$ steps $\times$ batch):
@@ -246,35 +315,43 @@ so it meta-trains during only $4\times100=400$ steps and is otherwise frozen.
 We report mean $\pm$ s.d.\ over $5$ seeds.
 
 \paragraph{Results.} Table~\ref{tab:main} and Figure~\ref{fig:curves} summarise
-the outcome. By $4000$ steps the task has largely saturated, so all three reach
-\emph{statistically indistinguishable} final validation loss (paired differences
-over 5 seeds have $|t|<2$). The benefit of importance sampling instead shows up
-\emph{earlier}, in sample efficiency: both the heuristic and the learned
-reweighter reach a target loss of $0.256$ with roughly $20$--$25\%$ fewer gradient
-examples than uniform SGD (Table~\ref{tab:main}, second row). Figure~\ref{fig:phi}
-shows the learned network recovered the \emph{right} signal: of the input
-features, the gradient-norm proxy has by far the largest effect (saliency) on the
-network's proposal score, i.e.\ it rediscovered $p^\star\propto\|g\|$ from cheap
-features rather than being told. Crucially (Table~\ref{tab:overhead}), it matches
-the heuristic's efficiency while computing the expensive per-example
-gradient-norm target on only $400$ steps instead of $4000$---a $90\%$ reduction in
-selection overhead---because outside the short refresh bursts it samples from
-cheap features alone.
+the outcome. Unlike the saturating task of earlier experiments, this harder
+corpus does \emph{not} bottom out within the $4000$-step budget, so the benefit
+of importance sampling now persists all the way to the final loss. The learned
+reweighter attains the lowest final validation loss, $0.521\pm0.035$, against
+$0.526\pm0.031$ for the fixed heuristic and $0.533\pm0.036$ for uniform SGD. The
+improvement over uniform is statistically significant (paired over 5 seeds,
+$\Delta=0.011$, $t=3.66$), while the gap to the every-step heuristic is within
+noise ($\Delta=0.005$, $t=2.42$): the learned proposal \emph{matches} the oracle
+heuristic and beats uniform. The same ordering shows up in sample efficiency:
+both importance samplers reach a target loss of $0.553$ with roughly $18$--$20\%$
+fewer gradient examples than uniform ($194$k and $199$k vs $243$k;
+Table~\ref{tab:main}, second row). Figure~\ref{fig:phi} shows the learned network
+recovered the \emph{right} signal: of the input features, the gradient-norm proxy
+has the largest effect (saliency) on the network's proposal score---with
+predictive entropy close behind---i.e.\ it recovers $p^\star\propto\|g\|$ from
+cheap features rather than being told, while also leaning on correlated
+uncertainty cues. Crucially (Table~\ref{tab:overhead}), it does so while computing
+the expensive per-example gradient-norm target on only $400$ steps instead of
+$4000$---a $90\%$ reduction in selection overhead---because outside the short
+refresh bursts it samples from cheap features alone.
 
 \begin{table}[t]
 \centering
 \caption{Top: final validation loss (nats/char), mean $\pm$ s.d.\ over 5 seeds,
-at a matched budget of $512{,}000$ gradient examples; the three are within noise
-of each other. Bottom: sample efficiency---gradient examples (thousands) needed to
-first reach a target validation loss of $0.256$; both importance samplers reach it
-sooner than uniform. Lower is better throughout.}
+at a matched budget of $512{,}000$ gradient examples; the learned reweighter is
+lowest, significantly below uniform ($t=3.66$) and on par with the heuristic
+($t=2.42$, within noise). Bottom: sample efficiency---gradient examples
+(thousands) needed to first reach a target validation loss of $0.553$ (reached in
+$4/5$ seeds for each method); both importance samplers reach it sooner than
+uniform. Lower is better throughout.}
 \label{tab:main}
 \begin{tabular}{lccc}
 \toprule
 & Uniform SGD & Grad-norm IS (heuristic) & Learned (ours) \\
 \midrule
-Final val.\ loss & $0.236 \pm 0.018$ & $0.238 \pm 0.020$ & $0.240 \pm 0.021$ \\
-Examples to $0.256$ ($\times10^3$) & $84$ & $\mathbf{63}$ & $67$ \\
+Final val.\ loss & $0.533 \pm 0.036$ & $0.526 \pm 0.031$ & $\mathbf{0.521 \pm 0.035}$ \\
+Examples to $0.553$ ($\times10^3$) & $243$ & $\mathbf{194}$ & $199$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -310,9 +387,10 @@ alone.}
 \includegraphics[width=0.62\textwidth]{../figs/phi.pdf}
 \caption{Network input saliency, $\mathbb{E}_{\text{pool}}\,|\partial s/\partial
 x_k|$ per feature (mean over seeds). Since the reweighter is nonlinear there is no
-single weight to plot; saliency is the analogue. The gradient-norm feature
-dominates, showing the network recovers the variance-optimal proposal $p^\star
-\propto \|g\|$ from cheap forward-pass features.}
+single weight to plot; saliency is the analogue. The gradient-norm feature has
+the largest saliency, with predictive entropy close behind, showing the network
+recovers the variance-optimal signal $p^\star \propto \|g\|$ from cheap
+forward-pass features while also exploiting correlated uncertainty cues.}
 \label{fig:phi}
 \end{figure}
 
@@ -325,12 +403,15 @@ toward the variance-optimal distribution each time it is refreshed.}
 \label{fig:variance}
 \end{figure}
 
-\paragraph{Interpretation.} The honest reading is not ``the learned method beats
-the heuristic''---on this saturated task all three finish at the same loss, and
-the heuristic is an every-step oracle. It is that \emph{a cheap, reusable network
-reproduces the heuristic's sample-efficiency benefit at a fraction of its
-selection cost}: it reaches the target loss about as fast as the oracle while
-computing the expensive gradient-norm target on only one step in ten. That is the
+\paragraph{Interpretation.} On this harder, non-saturating task the learned
+method does more than break even: it reaches a lower final loss than uniform SGD
+(significantly so) and statistically matches the every-step gradient-norm oracle.
+But the headline is not ``the learned method beats the heuristic''---the gap to
+the heuristic is within noise, and the heuristic is an every-step oracle. It is
+that \emph{a cheap, reusable network reproduces the oracle's benefit at a fraction
+of its selection cost}: it reaches the target loss about as fast as the oracle,
+and the same final loss, while computing the expensive gradient-norm target on
+only one step in ten. That is the
 property that matters when the per-example gradient computation is the bottleneck
 and when one wants a proposal that can be reused (across steps, and in principle
 across runs or models). This mirrors the ``train once, reuse for a week''
@@ -342,10 +423,10 @@ The experiment is deliberately small and controlled (a char-level MLP on
 synthetic data, CPU-only, pure NumPy) to make the mechanism and the
 stability analysis transparent and fully reproducible; we do not claim
 wall-clock gains at scale. The gradient-norm proxy is the logit-space norm rather
-than the full parameter-gradient norm. The reweighter is a small MLP over a
-handful of features; richer features or a larger network may capture difficulty
-structure that the fixed heuristic misses, which is the most promising route to
-\emph{exceeding} rather than merely approximating the heuristic. Finally, the
+than the full parameter-gradient norm. The reweighter is a three-hidden-layer MLP
+over a handful of features; richer features or a still larger network may capture
+difficulty structure that the fixed heuristic misses, which is the most promising
+route to \emph{exceeding} rather than merely approximating the heuristic. Finally, the
 frozen phases between refreshes trade a small amount of final accuracy for the
 overhead saving; the burst length $T_b$ and refresh period $R$ are tunable knobs
 on that trade-off (shorter, rarer bursts save more compute but let the proposal
@@ -363,11 +444,54 @@ integrand is large while reweighting to preserve the expectation---ports directl
 from adaptive importance sampling for path-dependent Monte Carlo
 \citep{virrion2020} to stochastic gradient training.
 
-\begin{thebibliography}{9}
+\begin{thebibliography}{99}
+
 \bibitem[Alain et al.(2015)]{alain2015}
 G.~Alain, A.~Lamb, C.~Sankar, A.~Courville, and Y.~Bengio.
 \newblock Variance reduction in SGD by distributed importance sampling.
 \newblock \emph{arXiv:1511.06481}, 2015.
+
+\bibitem[Bengio et al.(2009)]{bengio2009}
+Y.~Bengio, J.~Louradour, R.~Collobert, and J.~Weston.
+\newblock Curriculum learning.
+\newblock In \emph{ICML}, 2009.
+
+\bibitem[Bugallo et al.(2017)]{bugallo2017}
+M.~F.~Bugallo, V.~Elvira, L.~Martino, D.~Luengo, J.~M\'iguez, and P.~M.~Djuri\'c.
+\newblock Adaptive importance sampling: The past, the present, and the future.
+\newblock \emph{IEEE Signal Processing Magazine}, 34(4):60--79, 2017.
+
+\bibitem[Csiba \& Richt\'arik(2018)]{csiba2018}
+D.~Csiba and P.~Richt\'arik.
+\newblock Importance sampling for minibatches.
+\newblock \emph{Journal of Machine Learning Research}, 19(27):1--21, 2018.
+
+\bibitem[Faghri et al.(2020)]{faghri2020}
+F.~Faghri, D.~Duvenaud, D.~J.~Fleet, and J.~Ba.
+\newblock A study of gradient variance in deep learning.
+\newblock \emph{arXiv:2007.04532}, 2020.
+
+\bibitem[Fan et al.(2018)]{fan2018}
+Y.~Fan, F.~Tian, T.~Qin, X.-Y.~Li, and T.-Y.~Liu.
+\newblock Learning to teach.
+\newblock In \emph{ICLR}, 2018.
+
+\bibitem[Jiang et al.(2018)]{jiang2018}
+L.~Jiang, Z.~Zhou, T.~Leung, L.-J.~Li, and L.~Fei-Fei.
+\newblock MentorNet: Learning data-driven curriculum for very deep neural
+networks on corrupted labels.
+\newblock In \emph{ICML}, 2018.
+
+\bibitem[Johnson \& Guestrin(2018)]{johnson2018}
+T.~B.~Johnson and C.~Guestrin.
+\newblock Training deep models faster with robust, approximate importance
+sampling.
+\newblock In \emph{NeurIPS}, 2018.
+
+\bibitem[Katharopoulos \& Fleuret(2017)]{katharopoulos2017}
+A.~Katharopoulos and F.~Fleuret.
+\newblock Biased importance sampling for deep neural network training.
+\newblock \emph{arXiv:1706.00043}, 2017.
 
 \bibitem[Katharopoulos \& Fleuret(2018)]{katharopoulos2018}
 A.~Katharopoulos and F.~Fleuret.
@@ -375,10 +499,81 @@ A.~Katharopoulos and F.~Fleuret.
 sampling.
 \newblock In \emph{ICML}, 2018.
 
+\bibitem[Kumar et al.(2010)]{kumar2010}
+M.~P.~Kumar, B.~Packer, and D.~Koller.
+\newblock Self-paced learning for latent variable models.
+\newblock In \emph{NeurIPS}, 2010.
+
+\bibitem[Lin et al.(2017)]{lin2017}
+T.-Y.~Lin, P.~Goyal, R.~Girshick, K.~He, and P.~Doll\'ar.
+\newblock Focal loss for dense object detection.
+\newblock In \emph{ICCV}, 2017.
+
+\bibitem[Loshchilov \& Hutter(2015)]{loshchilov2015}
+I.~Loshchilov and F.~Hutter.
+\newblock Online batch selection for faster training of neural networks.
+\newblock \emph{arXiv:1511.06343}, 2015.
+
+\bibitem[Mnih \& Gregor(2014)]{mnih2014}
+A.~Mnih and K.~Gregor.
+\newblock Neural variational inference and learning in belief networks.
+\newblock In \emph{ICML}, 2014.
+
+\bibitem[M\"uller et al.(2019)]{mueller2019}
+T.~M\"uller, B.~McWilliams, F.~Rousselle, M.~Gross, and J.~Nov\'ak.
+\newblock Neural importance sampling.
+\newblock \emph{ACM Transactions on Graphics}, 38(5):145, 2019.
+
+\bibitem[Needell et al.(2014)]{needell2014}
+D.~Needell, R.~Ward, and N.~Srebro.
+\newblock Stochastic gradient descent, weighted sampling, and the randomized
+Kaczmarz algorithm.
+\newblock In \emph{NeurIPS}, 2014.
+
+\bibitem[Owen(2013)]{owen2013}
+A.~B.~Owen.
+\newblock \emph{Monte Carlo Theory, Methods and Examples}.
+\newblock 2013. \url{https://artowen.su.domains/mc/}.
+
+\bibitem[Rubinstein \& Kroese(2004)]{rubinstein2004}
+R.~Y.~Rubinstein and D.~P.~Kroese.
+\newblock \emph{The Cross-Entropy Method: A Unified Approach to Combinatorial
+Optimization, Monte-Carlo Simulation and Machine Learning}.
+\newblock Springer, 2004.
+
+\bibitem[Schaul et al.(2015)]{schaul2015}
+T.~Schaul, J.~Quan, I.~Antonoglou, and D.~Silver.
+\newblock Prioritized experience replay.
+\newblock \emph{arXiv:1511.05952}, 2015.
+
+\bibitem[Shrivastava et al.(2016)]{shrivastava2016}
+A.~Shrivastava, A.~Gupta, and R.~Girshick.
+\newblock Training region-based object detectors with online hard example
+mining.
+\newblock In \emph{CVPR}, 2016.
+
+\bibitem[Stich et al.(2017)]{stich2017}
+S.~U.~Stich, A.~Raj, and M.~Jaggi.
+\newblock Safe adaptive importance sampling.
+\newblock In \emph{NeurIPS}, 2017.
+
 \bibitem[Virrion(2020)]{virrion2020}
 B.~Virrion.
 \newblock Deep importance sampling.
 \newblock \emph{arXiv:2007.02692}, 2020.
+
+\bibitem[Williams(1992)]{williams1992}
+R.~J.~Williams.
+\newblock Simple statistical gradient-following algorithms for connectionist
+reinforcement learning.
+\newblock \emph{Machine Learning}, 8:229--256, 1992.
+
+\bibitem[Zhao \& Zhang(2015)]{zhao2015}
+P.~Zhao and T.~Zhang.
+\newblock Stochastic optimization with importance sampling for regularized loss
+minimization.
+\newblock In \emph{ICML}, 2015.
+
 \end{thebibliography}
 
 \end{document}

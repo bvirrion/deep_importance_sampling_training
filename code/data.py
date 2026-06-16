@@ -3,47 +3,89 @@ Data utilities: build a char-level dataset of (context, target) pairs and
 provide cheap per-example features for the learned reweighter.
 
 We synthesise a corpus with deliberately *heterogeneous difficulty* so that
-importance sampling has something to exploit: most of the text is highly
-predictable (easy, low-loss) while a minority of positions are genuinely hard
-(high entropy). A uniform sampler wastes most of its gradient budget on the
-easy majority; a good reweighter should concentrate on the informative minority.
+importance sampling has something to exploit. Rather than a simple easy/hard
+binary split, we use a graded, multi-tier mixture that spans a continuum of
+difficulty and is, overall, substantially harder to fit:
+
+  - Tier A (easy):   deterministic template phrases -- highly predictable given
+                     context, low loss, small gradients.
+  - Tier B (medium): stochastic-slot phrases whose words are drawn at random
+                     from small pools, so context only *partially* predicts the
+                     next character -- intermediate, branch-dependent gradients.
+  - Tier C (hard):   longer high-entropy alphanumeric bursts -- near-random,
+                     high loss, large gradients.
+
+The medium tier is the new source of heterogeneity: it fills in the difficulty
+spectrum between the trivially-easy and the near-random, and lowering the easy
+fraction makes the global task genuinely harder (it does not saturate within the
+training budget). A uniform sampler spends most of its gradient budget on the
+easy/medium-predictable majority; a good reweighter should concentrate on the
+informative, high-gradient positions across the whole difficulty continuum.
 """
 
 import numpy as np
 
 
 def make_corpus(n_chars=200_000, seed=0):
-    """Synthesise a corpus with mixed easy/hard structure.
+    """Synthesise a corpus with a graded, multi-tier difficulty structure.
 
-    Vocabulary: lowercase a-z plus space and a few digits.
-    - 'Easy' regions: a small set of repeating template words (highly
-      predictable given context).
-    - 'Hard' regions: short bursts of near-random digit strings (high entropy,
-      large gradients), interleaved at low frequency.
+    Vocabulary: lowercase a-z, space, period, comma, and digits 0-9.
+
+    Mixture per phrase (tunable knobs):
+      - 45% Tier A: deterministic template phrases (easy).
+      - 35% Tier B: stochastic-slot phrases -- a fixed skeleton with random
+        word choices from small pools, so the next char is only partly
+        determined by context (medium).
+      - 20% Tier C: longer high-entropy alphanumeric bursts (hard).
     """
     rng = np.random.default_rng(seed)
-    vocab = list("abcdefghijklmnopqrstuvwxyz 0123456789")
+    vocab = list("abcdefghijklmnopqrstuvwxyz .,0123456789")
     stoi = {c: i for i, c in enumerate(vocab)}
 
+    # Tier A: fully deterministic, highly predictable templates.
     easy_words = [
-        "the cat sat on the mat ",
-        "a dog ran in the park ",
-        "she sells sea shells ",
-        "we go to the shop now ",
-        "rain falls on the town ",
+        "the cat sat on the mat. ",
+        "a dog ran in the park. ",
+        "she sells sea shells. ",
+        "we go to the shop now. ",
+        "rain falls on the town. ",
     ]
+
+    # Tier B: phrase skeletons with random slots. The skeleton is predictable but
+    # each slot branches over a small pool, producing intermediate difficulty.
+    subjects = ["a fox", "the bird", "my friend", "her sister", "the old man",
+                "a sailor", "the queen", "his brother"]
+    verbs = ["found", "lost", "painted", "chased", "carried", "counted",
+             "traded", "hid"]
+    objects = ["a red box", "some bright coins", "the small key", "a green leaf",
+               "two grey stones", "the glass jar", "a silver ring", "the torn map"]
+    places = ["near the river", "by the tall gate", "under the bridge",
+              "behind the barn", "on the long road", "inside the cave",
+              "above the bay", "across the field"]
+
+    def medium_phrase():
+        return (f"{subjects[rng.integers(len(subjects))]} "
+                f"{verbs[rng.integers(len(verbs))]} "
+                f"{objects[rng.integers(len(objects))]} "
+                f"{places[rng.integers(len(places))]}, ")
+
+    # Tier C: longer high-entropy bursts mixing digits and letters.
+    hard_alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
 
     out = []
     while len(out) < n_chars:
-        if rng.random() < 0.85:
-            # easy, predictable template
-            w = easy_words[rng.integers(len(easy_words))]
-            out.extend(w)
+        r = rng.random()
+        if r < 0.45:
+            # Tier A: easy, deterministic template
+            out.extend(easy_words[rng.integers(len(easy_words))])
+        elif r < 0.80:
+            # Tier B: medium, stochastic-slot phrase
+            out.extend(medium_phrase())
         else:
-            # hard, high-entropy burst of digits
-            k = rng.integers(4, 9)
+            # Tier C: hard, high-entropy alphanumeric burst
+            k = rng.integers(8, 15)
             for _ in range(k):
-                out.append("0123456789"[rng.integers(10)])
+                out.append(hard_alphabet[rng.integers(len(hard_alphabet))])
             out.append(" ")
     text = "".join(out)[:n_chars]
     data = np.array([stoi[c] for c in text], dtype=np.int64)

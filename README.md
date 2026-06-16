@@ -13,7 +13,7 @@ short bursts, otherwise used frozen without recomputing gradient norms).
 paper/paper.tex      LaTeX source of the paper
 paper/paper.pdf      Compiled paper (7 pages)
 code/model.py        Char-level LM in pure NumPy with per-example gradients
-code/data.py         Synthetic mixed-difficulty corpus + reweighter features
+code/data.py         Synthetic graded multi-tier difficulty corpus + reweighter features
 code/reweighter.py   The learned proposal q_phi and its (stable) meta-update
 code/train.py        The three training conditions + amortised deployment
 code/run_experiment.py  Multi-seed A/B/C runner; writes results.json + figures
@@ -28,7 +28,7 @@ train_log.txt        Full training log
 2. **Grad-norm IS** — the *fixed heuristic*: sample the minibatch from a
    candidate pool with probability proportional to a per-example gradient-norm
    proxy, recomputed **every step**. Importance weights de-bias the update.
-3. **Learned (ours)** — a small **neural network** `q_phi` (one-hidden-layer MLP
+3. **Learned (ours)** — a small **neural network** `q_phi` (three-hidden-layer MLP
    + softmax over the pool) over cheap forward-pass features (loss, grad-norm
    proxy, entropy, confidence). It is meta-trained to match the variance-optimal
    proposal `p* ∝ ||g||` via a **convex cross-entropy** objective, on a
@@ -37,24 +37,27 @@ train_log.txt        Full training log
 
 ## Headline result (5 seeds)
 
-| Method            | Final val loss   | Examples to val 0.256 | Grad-norm passes |
+| Method            | Final val loss   | Examples to val 0.553 | Grad-norm passes |
 |-------------------|------------------|-----------------------|------------------|
-| Uniform SGD       | 0.236 ± 0.018    | 84k                   | 0                |
-| Grad-norm IS      | 0.238 ± 0.020    | **63k**               | 4000             |
-| Learned (ours)    | 0.240 ± 0.021    | 67k                   | **400 (−90%)**   |
+| Uniform SGD       | 0.533 ± 0.036    | 243k                  | 0                |
+| Grad-norm IS      | 0.526 ± 0.031    | **194k**              | 4000             |
+| Learned (ours)    | **0.521 ± 0.035**| 199k                  | **400 (−90%)**   |
 
-By 4000 steps the task saturates, so all three reach a statistically
-indistinguishable final loss. The payoff of importance sampling is in **sample
-efficiency**: the learned reweighter (like the heuristic) reaches the target loss
-with ~20% fewer gradient examples than uniform, while doing the expensive
-per-example gradient-norm computation on only 10% of the steps — because it
-amortises the proposal into a cheap, periodically-refreshed neural network. It
-also *rediscovers* the right signal: the gradient-norm feature has by far the
-largest saliency in the trained network (see `figs/phi.pdf`).
+On this harder, graded-difficulty corpus the task does **not** saturate within
+the budget, so the importance-sampling benefit persists to the final loss. The
+learned reweighter reaches the **lowest** final loss — significantly below uniform
+(paired `t=3.66`) and within noise of the every-step heuristic (`t=2.42`) — and is
+also more **sample-efficient**, reaching the target loss with ~18–20% fewer
+gradient examples than uniform. It does all this while computing the expensive
+per-example gradient-norm target on only 10% of the steps, because it amortises
+the proposal into a cheap, periodically-refreshed neural network. It also
+*rediscovers* the right signal: the gradient-norm feature has the largest saliency
+in the trained network (with predictive entropy close behind; see `figs/phi.pdf`).
 
-The honest framing (stated in the paper): the learned method is **not** expected
-to beat the every-step oracle heuristic — its value is matching its efficiency
-cheaply (90% fewer selection passes) and being reusable.
+The honest framing (stated in the paper): the learned method **matches** the
+every-step oracle heuristic (the gap is within noise) and beats uniform — its
+value is reaching the oracle's accuracy and efficiency cheaply (90% fewer
+selection passes) and being reusable.
 
 ## Reproduce
 

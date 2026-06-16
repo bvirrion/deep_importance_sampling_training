@@ -98,7 +98,7 @@ def train_gradnorm(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
 
 def train_learned(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
                   pool_size, meta_lr, eval_every, seed=0, log=None,
-                  hidden=16, meta_burst=100, refresh_period=1000):
+                  hidden=32, meta_burst=100, refresh_period=1000):
     """Proposed method: neural reweighter with a periodic-refresh duty-cycle.
 
     The reweighter is meta-trained in short bursts and otherwise used frozen on
