@@ -1,6 +1,8 @@
 *.pdf
 .venv/
 figs/
+__pycache__/
+*.pyc
 
 train_log.txt
 results.json

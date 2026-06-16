@@ -8,25 +8,35 @@ candidate pool; we report that overhead explicitly so the comparison is honest.
 """
 
 import json
+import os
 import sys
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from code.data import make_corpus, build_examples, split
+from code.data import make_corpus, build_examples, split, reweighter_features
+from code.model import CharLM
 from code.train import train_uniform, train_gradnorm, train_learned, evaluate
+
+# Write all artefacts into the repository (one level up from this code/ dir),
+# regardless of the working directory the script is launched from.
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FIGS_DIR = os.path.join(REPO_ROOT, "figs")
+os.makedirs(FIGS_DIR, exist_ok=True)
 
 CONFIG = dict(
     n_chars=120_000,
     context=8,
-    steps=600,
+    steps=4000,
     batch=128,
     pool_size=512,
     lr=0.5,
-    meta_lr=0.5,
-    amortize_after=150,
-    eval_every=20,
+    meta_lr=0.1,
+    hidden=16,
+    meta_burst=100,
+    refresh_period=1000,
+    eval_every=50,
     seeds=[0, 1, 2, 3, 4],
 )
 
@@ -47,15 +57,24 @@ def run_once(seed, cfg, log):
         steps=cfg["steps"], batch=cfg["batch"], lr=cfg["lr"],
         pool_size=cfg["pool_size"], eval_every=cfg["eval_every"], seed=seed, log=log)
 
-    _, c_lr, cost_curve, rw, lr_passes = train_learned(
+    model_lr, c_lr, cost_curve, rw, lr_passes = train_learned(
         Xtr, ytr, Xv, yv, V,
         steps=cfg["steps"], batch=cfg["batch"], lr=cfg["lr"],
         pool_size=cfg["pool_size"], meta_lr=cfg["meta_lr"],
         eval_every=cfg["eval_every"], seed=seed, log=log,
-        amortize_after=cfg["amortize_after"])
+        hidden=cfg["hidden"], meta_burst=cfg["meta_burst"],
+        refresh_period=cfg["refresh_period"])
+
+    # Feature saliency of the trained network on a fresh pool: which input
+    # features most move the proposal (the analogue of the linear weight plot).
+    rng = np.random.default_rng(1000 + seed)
+    pool = rng.integers(0, Xtr.shape[0], size=cfg["pool_size"])
+    cache = model_lr.forward(Xtr[pool])
+    feats = reweighter_features(model_lr, cache, ytr[pool])
+    saliency = rw.feature_saliency(feats)
 
     return dict(uniform=c_uni, gradnorm=c_gn, learned=c_lr,
-                cost=cost_curve, phi=rw.phi.tolist(),
+                cost=cost_curve, saliency=saliency.tolist(),
                 gn_passes=gn_passes, lr_passes=lr_passes)
 
 
@@ -131,7 +150,7 @@ def main():
         learned_vs_gradnorm_t=tstat(d_lg),
         n_seeds=len(cfg["seeds"]),
     )
-    summary["mean_phi"] = np.mean([r["phi"] for r in all_runs], axis=0).tolist()
+    summary["mean_saliency"] = np.mean([r["saliency"] for r in all_runs], axis=0).tolist()
     # overhead: how many expensive per-example gradient-norm passes each method needs
     gn_passes = float(np.mean([r["gn_passes"] for r in all_runs]))
     lr_passes = float(np.mean([r["lr_passes"] for r in all_runs]))
@@ -142,7 +161,7 @@ def main():
     )
     summary["config"] = cfg
 
-    with open("/home/claude/lrw/results.json", "w") as f:
+    with open(os.path.join(REPO_ROOT, "results.json"), "w") as f:
         json.dump(summary, f, indent=2)
 
     # ---- Figure 1: learning curves (val loss vs examples) ------------------
@@ -163,8 +182,8 @@ def main():
     plt.legend()
     plt.grid(alpha=0.3)
     plt.tight_layout()
-    plt.savefig("/home/claude/lrw/figs/curves.pdf")
-    plt.savefig("/home/claude/lrw/figs/curves.png", dpi=130)
+    plt.savefig(os.path.join(FIGS_DIR, "curves.pdf"))
+    plt.savefig(os.path.join(FIGS_DIR, "curves.png"), dpi=130)
     plt.close()
 
     # ---- Figure 2: variance proxy (reweighter cost) over training ----------
@@ -179,25 +198,24 @@ def main():
     plt.grid(alpha=0.3)
     plt.yscale("log")
     plt.tight_layout()
-    plt.savefig("/home/claude/lrw/figs/variance.pdf")
-    plt.savefig("/home/claude/lrw/figs/variance.png", dpi=130)
+    plt.savefig(os.path.join(FIGS_DIR, "variance.pdf"))
+    plt.savefig(os.path.join(FIGS_DIR, "variance.png"), dpi=130)
     plt.close()
 
-    # ---- Figure 3: learned phi weights -------------------------------------
+    # ---- Figure 3: network input saliency ----------------------------------
     feat_names = ["loss", "grad-norm", "entropy", "max-prob", "bias"]
-    phi = np.array(summary["mean_phi"])
+    sal = np.array(summary["mean_saliency"])
     plt.figure(figsize=(6, 3.8))
-    plt.bar(feat_names, phi, color="#d62728", alpha=0.8)
-    plt.ylabel("mean learned weight $\\phi$")
-    plt.title("What the reweighter learned to weight (mean over seeds)")
-    plt.axhline(0, color="k", linewidth=0.8)
+    plt.bar(feat_names, sal, color="#d62728", alpha=0.8)
+    plt.ylabel(r"mean $|\partial\,\mathrm{score}/\partial\,\mathrm{feature}|$")
+    plt.title("What the reweighter network learned to use (mean over seeds)")
     plt.grid(alpha=0.3, axis="y")
     plt.tight_layout()
-    plt.savefig("/home/claude/lrw/figs/phi.pdf")
-    plt.savefig("/home/claude/lrw/figs/phi.png", dpi=130)
+    plt.savefig(os.path.join(FIGS_DIR, "phi.pdf"))
+    plt.savefig(os.path.join(FIGS_DIR, "phi.png"), dpi=130)
     plt.close()
 
-    with open("/home/claude/lrw/train_log.txt", "w") as f:
+    with open(os.path.join(REPO_ROOT, "train_log.txt"), "w") as f:
         f.write("\n".join(logs))
 
     # Print compact summary
@@ -216,7 +234,7 @@ def main():
     print("paired learned vs gradnorm: d={:.4f} t={:.2f}".format(
         summary["paired"]["learned_vs_gradnorm_mean"],
         summary["paired"]["learned_vs_gradnorm_t"]))
-    print("mean phi:", np.array2string(np.array(summary["mean_phi"]), precision=3))
+    print("mean saliency:", np.array2string(np.array(summary["mean_saliency"]), precision=3))
     ov = summary["overhead"]
     print("overhead: heuristic needs {:.0f} gradnorm passes, learned needs {:.0f} "
           "({:.0f}% saved via amortization)".format(

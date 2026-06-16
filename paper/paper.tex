@@ -30,16 +30,20 @@ gradient estimator and thereby accelerate training, but the variance-optimal
 proposal---sampling each example in proportion to its gradient norm---requires a
 per-example gradient computation over a candidate pool at \emph{every} step,
 which is precisely the cost one is trying to save. We study replacing this fixed
-heuristic with a small \emph{learned reweighting function} $q_\phi$ that maps
-cheap, forward-pass byproduct features (current loss, a logit-gradient-norm
-proxy, predictive entropy, confidence) to a sampling proposal. The reweighter is
+heuristic with a small \emph{neural network} $q_\phi$ that maps the candidate
+batch---through cheap, forward-pass byproduct features (current loss, a
+logit-gradient-norm proxy, predictive entropy, confidence)---to a sampling
+proposal, i.e.\ a learned change of measure over the batch. The network is
 trained online by matching its proposal to the variance-optimal distribution
-through a convex cross-entropy meta-objective, and is then \emph{frozen and
-amortised}: it continues to supply an importance-sampling proposal from cheap
-features without recomputing gradient norms. On a controlled char-level language
-modelling task with heterogeneous example difficulty, the learned reweighter
-recovers most of the benefit of the oracle gradient-norm heuristic while
-eliminating $75\%$ of the expensive per-example gradient-norm passes. We give the
+through a convex cross-entropy meta-objective that concentrates sampling on
+high-gradient examples, and is then \emph{periodically refreshed}: it is
+meta-trained in short bursts and otherwise supplies an importance-sampling
+proposal from cheap features alone---without recomputing gradient norms---each
+refresh warm-started from the previous state so it tracks the model's drifting
+notion of difficulty. On a controlled char-level language modelling task with
+heterogeneous example difficulty, the learned reweighter recovers most of the
+benefit of the oracle gradient-norm heuristic while eliminating $90\%$ of the
+expensive per-example gradient-norm passes. We give the
 unbiasedness argument for the importance-weighted update, describe a stabilised
 meta-update (an earlier raw variance-minimising REINFORCE update diverges, and we
 explain why), and release a fully self-contained NumPy implementation with an
@@ -67,10 +71,11 @@ pool each step. This still pays a per-step pool cost, and it is \emph{fixed}: it
 cannot adapt to the model's changing notion of which examples are informative,
 and it cannot be reused.
 
-\paragraph{Contribution.} We replace the fixed heuristic with a \emph{learned}
-proposal $q_\phi$ over cheap features, trained so that sampling from it reduces
-estimator variance, and \emph{amortised} so that the expensive gradient-norm
-target need only be computed during an initial meta-training phase. Concretely:
+\paragraph{Contribution.} We replace the fixed heuristic with a \emph{learned},
+neural proposal $q_\phi$ over cheap features, trained so that sampling from it
+reduces estimator variance, and \emph{amortised by periodic refresh} so that the
+expensive gradient-norm target need only be computed during short, intermittent
+meta-training bursts. Concretely:
 \begin{enumerate}
 \item We formulate the learned reweighter and prove the importance-weighted
 update it induces is unbiased for any strictly positive proposal
@@ -82,9 +87,11 @@ unstable---the per-sample cost spans many orders of magnitude and $\phi$ diverge
 in a feedback loop with the proposal---and replace it with a convex
 distribution-matching objective ($\mathrm{KL}(p^\star \,\|\, q_\phi)$) that has
 the same optimum and well-behaved dynamics.
-\item We demonstrate amortisation: after freezing the reweighter, training
-proceeds with importance sampling from cheap features alone, removing $75\%$ of
-the gradient-norm passes while retaining most of the benefit.
+\item We demonstrate amortisation by periodic refresh: the reweighter is
+meta-trained in short bursts and otherwise used frozen, so training proceeds with
+importance sampling from cheap features alone for the large majority of steps,
+removing $90\%$ of the gradient-norm passes while retaining most of the benefit
+and letting the proposal re-adapt to the model as it changes.
 \end{enumerate}
 
 \paragraph{Relation to a learned change of measure.} The construction is the
@@ -92,11 +99,19 @@ discrete-optimisation counterpart of adaptive importance sampling for
 path-dependent Monte Carlo, in which a neural network parametrises a Girsanov
 drift that reorients sampled trajectories toward the region where the integrand
 (the payoff) has mass, trained to minimise estimator variance and reused across
-many pricings \citep{virrion2020}. There, the change of measure leaves the target
-expectation invariant by construction and is optimised purely for variance;
-here, the importance weights play the same role for the gradient estimator. The
-shared principle is: \emph{learn a sampling distribution that concentrates effort
-where the integrand is large, while reweighting to preserve the expectation.}
+many pricings \citep{virrion2020}. The parallel is structural: there a neural
+network maps the past of a trajectory to a change of measure on path space; here
+a neural network maps the candidate batch (its per-example features) to a
+discrete change of measure over the batch. In both cases the change of measure
+leaves the target expectation invariant by construction and is optimised purely
+for variance---concentrating sampling where the integrand is large. The one
+honest qualifier is the training signal: rather than minimising estimator
+variance directly (which we show is unstable here, \S\ref{ssec:meta}), we train
+the network to reproduce the variance-optimal target $p^\star\propto\|g\|$, i.e.\
+to sample more where the gradient is larger, through a convex surrogate with the
+same optimum. The shared principle is: \emph{learn a sampling distribution that
+concentrates effort where the integrand is large, while reweighting to preserve
+the expectation.}
 
 \section{Method}
 
@@ -130,16 +145,22 @@ We attach to each pool example a feature vector $x_i\in\mathbb{R}^F$ whose entri
 are byproducts of the forward pass already required to sample: the current loss,
 a logit-gradient-norm proxy $\|\partial \mathcal L_i/\partial \text{logits}\|$,
 the predictive entropy, the max predicted probability, and a bias term. The
-reweighter is a softmax over a linear score,
+reweighter is a small neural network---a one-hidden-layer MLP shared across pool
+examples, followed by a softmax over the pool,
 \begin{equation}
-q_\phi(x)_i = \frac{\exp(x_i^\top \phi / \tau)}{\sum_{j}\exp(x_j^\top \phi/\tau)}.
+h_i = \tanh(W_1^\top x_i + b_1), \quad
+s_i = W_2^\top h_i + b_2, \quad
+q_\phi(x)_i = \frac{\exp(s_i / \tau)}{\sum_{j}\exp(s_j/\tau)},
 \end{equation}
-A linear model on these (nonlinear) features can represent $p^\star$ exactly when
-one feature equals $\|g_i\|$, and can otherwise learn the best available
-combination. We mix in a small uniform floor, $p = (1-\epsilon)q_\phi +
+with parameters $\phi=(W_1,b_1,W_2,b_2)$. The network maps the batch (its feature
+matrix) to a probability measure over the pool---the importance-sampling change
+of measure---mirroring the Girsanov-drift network of \citet{virrion2020}. It can
+represent $p^\star$ exactly when one feature equals $\|g_i\|$, and the hidden
+layer lets it capture difficulty structure that a linear score or fixed proxy
+cannot. We mix in a small uniform floor, $p = (1-\epsilon)q_\phi +
 \epsilon/n$, to guarantee $p_i>0$ and keep weights finite.
 
-\subsection{A stable meta-objective}
+\subsection{A stable meta-objective}\label{ssec:meta}
 \paragraph{What fails.} The direct approach minimises the estimator variance
 proxy $\mathbb{E}_{i\sim p}[C(i)]$ with
 $C(i)=\big(\tfrac{1}{n p_i}\big)^2\|g_i\|^2$ by REINFORCE,
@@ -154,41 +175,51 @@ validation loss diverged.
 we fit $q_\phi$ to $p^\star$ directly by minimising
 \begin{equation}
 \mathcal L_{\text{meta}}(\phi) = \mathrm{KL}\!\left(p^\star \,\big\|\, q_\phi\right)
-= -\sum_i p^\star_i \log q_\phi(x)_i + \text{const},
+= -\sum_i p^\star_i \log q_\phi(x)_i + \text{const}.
 \end{equation}
-whose gradient is the standard softmax cross-entropy form
+For a softmax over per-example scores $s_i$, the gradient with respect to the
+scores is the standard cross-entropy form
 \begin{equation}
-\nabla_\phi \mathcal L_{\text{meta}} = \sum_i \big(q_\phi(x)_i - p^\star_i\big)\,x_i .
+\frac{\partial \mathcal L_{\text{meta}}}{\partial s_i}
+= q_\phi(x)_i - p^\star_i ,
 \label{eq:metagrad}
 \end{equation}
-This is convex in the score logits, well scaled (both $q$ and $p^\star$ are
-probability vectors), and has a unique descent direction; we additionally
-trust-region the step by capping $\|\nabla_\phi\mathcal L_{\text{meta}}\|$. The
-target $p^\star$ still uses gradient norms, so meta-training pays the pool cost---
-but only until the reweighter is frozen.
+which we backpropagate through the network to obtain $\nabla_\phi\mathcal
+L_{\text{meta}}$. This signal is well scaled (both $q$ and $p^\star$ are
+probability vectors) and convex in the score logits; we additionally
+trust-region the step by capping the global gradient norm. The
+target $p^\star$ still uses gradient norms, so a meta-training burst pays the pool
+cost---but only during the brief, intermittent refresh phases.
 
-\subsection{Amortisation}
-After $T_0$ meta-steps we freeze $\phi$ and stop computing $p^\star$. Sampling
-then uses only the cheap features, so subsequent steps incur \emph{no}
-gradient-norm pass while still drawing an importance-sampled, debiased minibatch.
-This is where the learned proposal earns its keep relative to the fixed
-heuristic, which must recompute its proxy every step.
+\subsection{Amortisation by periodic refresh}
+Rather than freeze the network once, we amortise it with a duty-cycle. In each
+period of $R$ steps we meta-train for a short burst of $T_b\ll R$ steps---paying
+the gradient-norm pool cost and updating $\phi$---and for the remaining $R-T_b$
+steps we use the network frozen, sampling from the cheap features alone with
+\emph{no} gradient-norm pass while still drawing an importance-sampled, debiased
+minibatch. Each refresh is warm-started from the previous $\phi$, so the proposal
+re-adapts to the model's drifting notion of difficulty at negligible cost instead
+of going stale. Over a run this computes the expensive target on a $T_b/R$
+fraction of steps. This is where the learned proposal earns its keep relative to
+the fixed heuristic, which must recompute its proxy \emph{every} step.
 
 \begin{algorithm}[t]
-\caption{Training with a learned, amortised reweighter}
+\caption{Training with a learned, periodically-refreshed reweighter network}
 \label{alg:main}
 \begin{algorithmic}[1]
-\State \textbf{input:} model $\theta$, reweighter $\phi$, pool size $n$, batch
-$B$, lr $\eta$, meta-lr $\beta$, freeze step $T_0$
+\State \textbf{input:} model $\theta$, reweighter network $\phi$, pool size $n$,
+batch $B$, lr $\eta$, meta-lr $\beta$, refresh period $R$, burst length $T_b$
 \For{$t=1,2,\dots$}
   \State sample candidate pool of $n$ examples
   \State forward pass on pool; form features $x_i$ and proposal $q_\phi(x)$
-  \If{$t < T_0$} compute $\|g_i\|$ on pool; \quad $p^\star_i \gets \|g_i\|/\sum_j\|g_j\|$ \EndIf
+  \State $\textsc{meta} \gets [\,(t \bmod R) < T_b\,]$ \hfill\Comment{in a refresh burst?}
+  \If{\textsc{meta}} compute $\|g_i\|$ on pool; \quad $p^\star_i \gets \|g_i\|/\sum_j\|g_j\|$ \EndIf
   \State sample minibatch indices $i_1,\dots,i_B \sim p=(1-\epsilon)q_\phi+\epsilon/n$
   \State weights $w_b \gets 1/(n\,p_{i_b})$, clip and normalise to mean $1$
   \State $\theta \gets \theta - \eta\, \tfrac1B\sum_b w_b\, g_{i_b}$
   \hfill\Comment{unbiased weighted update}
-  \If{$t < T_0$} $\phi \gets \phi - \beta\, \sum_i (q_\phi(x)_i - p^\star_i)\,x_i$
+  \If{\textsc{meta}} set $\partial\mathcal L/\partial s_i \gets q_\phi(x)_i - p^\star_i$;
+  \ backprop through the network; \ $\phi \gets \phi - \beta\,\nabla_\phi\mathcal L$
   \hfill\Comment{convex meta-step}\EndIf
 \EndFor
 \end{algorithmic}
@@ -209,32 +240,41 @@ examples consumed $=$ steps $\times$ batch):
 \emph{(i) Uniform} standard SGD;
 \emph{(ii) Grad-norm IS}, the fixed heuristic, sampling the minibatch from the
 pool with $p\propto\|g\|$ proxy every step;
-\emph{(iii) Learned (ours)}, Algorithm~\ref{alg:main}, with the reweighter frozen
-after $T_0=150$ of $600$ steps.
+\emph{(iii) Learned (ours)}, Algorithm~\ref{alg:main}, a neural reweighter on a
+periodic-refresh schedule (burst $T_b=100$, period $R=1000$, over $4000$ steps),
+so it meta-trains during only $4\times100=400$ steps and is otherwise frozen.
 We report mean $\pm$ s.d.\ over $5$ seeds.
 
 \paragraph{Results.} Table~\ref{tab:main} and Figure~\ref{fig:curves} summarise
-the outcome. All three reach comparable validation loss. The fixed heuristic is
-best on final loss, as expected---it has oracle gradient-norm access at every
-step. The learned reweighter sits between uniform and the heuristic, while
-Figure~\ref{fig:phi} shows it recovered the \emph{right} signal: the largest
-positive learned weight is on the gradient-norm feature, i.e.\ it rediscovered
-$p^\star\propto\|g\|$ from cheap features rather than being told. Crucially
-(Table~\ref{tab:overhead}), it does so while computing the expensive
-per-example gradient-norm target on only $150$ steps instead of $600$---a $75\%$
-reduction in selection overhead---because after freezing it samples from cheap
-features alone.
+the outcome. By $4000$ steps the task has largely saturated, so all three reach
+\emph{statistically indistinguishable} final validation loss (paired differences
+over 5 seeds have $|t|<2$). The benefit of importance sampling instead shows up
+\emph{earlier}, in sample efficiency: both the heuristic and the learned
+reweighter reach a target loss of $0.256$ with roughly $20$--$25\%$ fewer gradient
+examples than uniform SGD (Table~\ref{tab:main}, second row). Figure~\ref{fig:phi}
+shows the learned network recovered the \emph{right} signal: of the input
+features, the gradient-norm proxy has by far the largest effect (saliency) on the
+network's proposal score, i.e.\ it rediscovered $p^\star\propto\|g\|$ from cheap
+features rather than being told. Crucially (Table~\ref{tab:overhead}), it matches
+the heuristic's efficiency while computing the expensive per-example
+gradient-norm target on only $400$ steps instead of $4000$---a $90\%$ reduction in
+selection overhead---because outside the short refresh bursts it samples from
+cheap features alone.
 
 \begin{table}[t]
 \centering
-\caption{Final validation loss (nats/char), mean $\pm$ s.d.\ over 5 seeds, at a
-matched budget of $76{,}800$ gradient examples. Lower is better.}
+\caption{Top: final validation loss (nats/char), mean $\pm$ s.d.\ over 5 seeds,
+at a matched budget of $512{,}000$ gradient examples; the three are within noise
+of each other. Bottom: sample efficiency---gradient examples (thousands) needed to
+first reach a target validation loss of $0.256$; both importance samplers reach it
+sooner than uniform. Lower is better throughout.}
 \label{tab:main}
 \begin{tabular}{lccc}
 \toprule
 & Uniform SGD & Grad-norm IS (heuristic) & Learned (ours) \\
 \midrule
-Final val.\ loss & $0.252 \pm 0.019$ & $\mathbf{0.244 \pm 0.023}$ & $0.262 \pm 0.014$ \\
+Final val.\ loss & $0.236 \pm 0.018$ & $0.238 \pm 0.020$ & $0.240 \pm 0.021$ \\
+Examples to $0.256$ ($\times10^3$) & $84$ & $\mathbf{63}$ & $67$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -242,15 +282,15 @@ Final val.\ loss & $0.252 \pm 0.019$ & $\mathbf{0.244 \pm 0.023}$ & $0.262 \pm 0
 \begin{table}[t]
 \centering
 \caption{Selection overhead: number of expensive per-example gradient-norm pool
-passes required over a $600$-step run. The learned reweighter is frozen after
-$150$ steps.}
+passes required over a $4000$-step run. The learned reweighter meta-trains only
+during $4$ refresh bursts of $100$ steps.}
 \label{tab:overhead}
 \begin{tabular}{lcc}
 \toprule
 & Grad-norm IS (heuristic) & Learned (ours) \\
 \midrule
-Gradient-norm passes & $600$ & $\mathbf{150}$ \\
-Reduction & --- & $\mathbf{75\%}$ \\
+Gradient-norm passes & $4000$ & $\mathbf{400}$ \\
+Reduction & --- & $\mathbf{90\%}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -259,19 +299,20 @@ Reduction & --- & $\mathbf{75\%}$ \\
 \centering
 \includegraphics[width=0.78\textwidth]{../figs/curves.pdf}
 \caption{Validation loss versus compute budget (mean $\pm$ s.d., 5 seeds). The
-learned reweighter tracks the baselines; the small transient near $1.9\!\times\!10^4$
-examples coincides with freezing the proposal, after which training proceeds
-with no further gradient-norm passes.}
+learned reweighter tracks the baselines while spending gradient-norm passes on
+only the periodic refresh bursts; between bursts it samples from cheap features
+alone.}
 \label{fig:curves}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.62\textwidth]{../figs/phi.pdf}
-\caption{Learned feature weights $\phi$ (mean over seeds). The reweighter places
-its dominant positive weight on the gradient-norm feature, recovering the
-variance-optimal proposal $p^\star \propto \|g\|$ from cheap forward-pass
-features.}
+\caption{Network input saliency, $\mathbb{E}_{\text{pool}}\,|\partial s/\partial
+x_k|$ per feature (mean over seeds). Since the reweighter is nonlinear there is no
+single weight to plot; saliency is the analogue. The gradient-norm feature
+dominates, showing the network recovers the variance-optimal proposal $p^\star
+\propto \|g\|$ from cheap forward-pass features.}
 \label{fig:phi}
 \end{figure}
 
@@ -279,38 +320,44 @@ features.}
 \centering
 \includegraphics[width=0.7\textwidth]{../figs/variance.pdf}
 \caption{The meta-objective's estimator-variance proxy $\mathbb{E}_p[C]$
-decreasing over the meta-training phase (per seed), indicating the proposal moves
-toward the variance-optimal distribution before being frozen.}
+recorded during the meta-training bursts (per seed), indicating the proposal moves
+toward the variance-optimal distribution each time it is refreshed.}
 \label{fig:variance}
 \end{figure}
 
 \paragraph{Interpretation.} The honest reading is not ``the learned method beats
-the heuristic on loss''---it should not, since the heuristic is an every-step
-oracle. It is that \emph{a cheap, reusable function reproduces most of the
-heuristic's benefit at a fraction of its selection cost}, which is the property
-that matters when the per-example gradient computation is the bottleneck and when
-one wants a proposal that can be reused (across steps, and in principle across
-runs or models). This mirrors the ``train once, reuse for a week'' robustness of
-the learned Girsanov sampler in the Monte Carlo setting \citep{virrion2020}.
+the heuristic''---on this saturated task all three finish at the same loss, and
+the heuristic is an every-step oracle. It is that \emph{a cheap, reusable network
+reproduces the heuristic's sample-efficiency benefit at a fraction of its
+selection cost}: it reaches the target loss about as fast as the oracle while
+computing the expensive gradient-norm target on only one step in ten. That is the
+property that matters when the per-example gradient computation is the bottleneck
+and when one wants a proposal that can be reused (across steps, and in principle
+across runs or models). This mirrors the ``train once, reuse for a week''
+robustness of the learned Girsanov sampler in the Monte Carlo setting
+\citep{virrion2020}.
 
 \section{Limitations}
 The experiment is deliberately small and controlled (a char-level MLP on
 synthetic data, CPU-only, pure NumPy) to make the mechanism and the
 stability analysis transparent and fully reproducible; we do not claim
 wall-clock gains at scale. The gradient-norm proxy is the logit-space norm rather
-than the full parameter-gradient norm. The reweighter is linear over a handful of
-features; richer features or a small nonlinear head may capture difficulty
+than the full parameter-gradient norm. The reweighter is a small MLP over a
+handful of features; richer features or a larger network may capture difficulty
 structure that the fixed heuristic misses, which is the most promising route to
 \emph{exceeding} rather than merely approximating the heuristic. Finally, the
-frozen-proposal phase trades a small amount of final accuracy for the overhead
-saving; the freeze point $T_0$ is a tunable knob on that trade-off.
+frozen phases between refreshes trade a small amount of final accuracy for the
+overhead saving; the burst length $T_b$ and refresh period $R$ are tunable knobs
+on that trade-off (shorter, rarer bursts save more compute but let the proposal
+drift further from $p^\star$ between refreshes).
 
 \section{Conclusion}
 We presented a learned, amortised importance-reweighting scheme for SGD that
 replaces a fixed gradient-norm heuristic with a small proposal network trained by
 a stable, convex distribution-matching meta-objective. It preserves unbiasedness
 exactly, recovers the variance-optimal signal from cheap features, and removes
-$75\%$ of the expensive selection passes by freezing and reusing the proposal.
+$90\%$ of the expensive selection passes by reusing the proposal between periodic
+refreshes.
 The viewpoint---learn a sampling distribution that concentrates effort where the
 integrand is large while reweighting to preserve the expectation---ports directly
 from adaptive importance sampling for path-dependent Monte Carlo

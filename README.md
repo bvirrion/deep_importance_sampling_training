@@ -2,9 +2,10 @@
 
 This bundle contains a short research paper and a fully self-contained,
 reproducible implementation of the idea we discussed: **replacing a fixed
-gradient-norm importance-sampling heuristic with a small *learned* reweighting
-function that is trained online and then amortised** (frozen and reused without
-recomputing gradient norms).
+gradient-norm importance-sampling heuristic with a small *neural network* that
+maps the batch to a change of measure, is trained online to sample more where the
+gradient is larger, and is amortised by *periodic refresh*** (meta-trained in
+short bursts, otherwise used frozen without recomputing gradient norms).
 
 ## What's here
 
@@ -27,36 +28,39 @@ train_log.txt        Full training log
 2. **Grad-norm IS** — the *fixed heuristic*: sample the minibatch from a
    candidate pool with probability proportional to a per-example gradient-norm
    proxy, recomputed **every step**. Importance weights de-bias the update.
-3. **Learned (ours)** — a small softmax proposal `q_phi` over cheap forward-pass
-   features (loss, grad-norm proxy, entropy, confidence). It is meta-trained to
-   match the variance-optimal proposal `p* ∝ ||g||` via a **convex
-   cross-entropy** objective, then **frozen after 150/600 steps** and used from
-   cheap features alone.
+3. **Learned (ours)** — a small **neural network** `q_phi` (one-hidden-layer MLP
+   + softmax over the pool) over cheap forward-pass features (loss, grad-norm
+   proxy, entropy, confidence). It is meta-trained to match the variance-optimal
+   proposal `p* ∝ ||g||` via a **convex cross-entropy** objective, on a
+   **periodic-refresh schedule** (100-step bursts every 1000 steps over 4000
+   steps), and used from cheap features alone between bursts.
 
 ## Headline result (5 seeds)
 
-| Method            | Final val loss      | Grad-norm passes |
-|-------------------|---------------------|------------------|
-| Uniform SGD       | 0.252 ± 0.019       | 0                |
-| Grad-norm IS      | **0.244 ± 0.023**   | 600              |
-| Learned (ours)    | 0.262 ± 0.014       | **150 (−75%)**   |
+| Method            | Final val loss   | Examples to val 0.256 | Grad-norm passes |
+|-------------------|------------------|-----------------------|------------------|
+| Uniform SGD       | 0.236 ± 0.018    | 84k                   | 0                |
+| Grad-norm IS      | 0.238 ± 0.020    | **63k**               | 4000             |
+| Learned (ours)    | 0.240 ± 0.021    | 67k                   | **400 (−90%)**   |
 
-The learned reweighter recovers most of the heuristic's benefit while doing the
-expensive per-example gradient-norm computation on only 25% of the steps,
-because it amortises the proposal into a cheap reusable function. It also
-*rediscovers* the right signal: the largest learned feature weight is on the
-gradient-norm feature (see `figs/phi.pdf`).
+By 4000 steps the task saturates, so all three reach a statistically
+indistinguishable final loss. The payoff of importance sampling is in **sample
+efficiency**: the learned reweighter (like the heuristic) reaches the target loss
+with ~20% fewer gradient examples than uniform, while doing the expensive
+per-example gradient-norm computation on only 10% of the steps — because it
+amortises the proposal into a cheap, periodically-refreshed neural network. It
+also *rediscovers* the right signal: the gradient-norm feature has by far the
+largest saliency in the trained network (see `figs/phi.pdf`).
 
 The honest framing (stated in the paper): the learned method is **not** expected
-to beat the every-step oracle heuristic on final loss — its value is matching it
-cheaply and being reusable.
+to beat the every-step oracle heuristic — its value is matching its efficiency
+cheaply (90% fewer selection passes) and being reusable.
 
 ## Reproduce
 
 ```bash
-cd code
-python3 run_experiment.py      # ~1-2 min, CPU only, no GPU/torch needed
-cd ../paper
+python3 -m code.run_experiment   # run from the repo root; CPU only, no GPU/torch
+cd paper
 pdflatex paper.tex && pdflatex paper.tex
 ```
 

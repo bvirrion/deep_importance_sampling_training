@@ -98,31 +98,38 @@ def train_gradnorm(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
 
 def train_learned(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
                   pool_size, meta_lr, eval_every, seed=0, log=None,
-                  amortize_after=None):
-    """Proposed method: learned reweighter, meta-updated online.
+                  hidden=16, meta_burst=100, refresh_period=1000):
+    """Proposed method: neural reweighter with a periodic-refresh duty-cycle.
 
-    If amortize_after is set, then after that many steps we STOP recomputing the
-    expensive per-example gradient-norm target and STOP meta-updating; the
-    reweighter is frozen and used purely from cheap forward-pass features. This
-    is the amortised-deployment regime where the method earns its keep: it keeps
-    importance-sampling benefits without the per-step gradient-norm overhead that
-    the fixed heuristic must always pay.
+    The reweighter is meta-trained in short bursts and otherwise used frozen on
+    cheap forward-pass features alone. Specifically, on steps where
+    (t % refresh_period) < meta_burst we recompute the expensive per-example
+    gradient-norm target p* and meta-update the network (warm-started from its
+    last state, since it is never reset); on all other steps we sample from the
+    frozen network with NO gradient-norm pass and NO meta-update.
+
+    This is the amortised regime where the method earns its keep: it keeps the
+    importance-sampling benefit while paying the per-example gradient-norm cost on
+    only a small fraction of steps, and the periodic refresh lets the proposal
+    track the model's drifting notion of which examples are informative -- unlike
+    the fixed heuristic, which must recompute its proxy every step.
     """
     rng = np.random.default_rng(seed)
     model = CharLM(vocab_size, seed=seed)
-    rw = Reweighter(n_features=5, seed=seed, temperature=1.0)
+    rw = Reweighter(n_features=5, hidden=hidden, seed=seed, temperature=1.0)
     Ntr = Xtr.shape[0]
     curve = []
     cost_curve = []
     examples_consumed = 0
     gradnorm_passes = 0   # count of expensive per-example gradnorm computations
+    cur_cost = float("nan")
     for t in range(steps):
         pool = _draw_pool(rng, Ntr, pool_size)
         Xp, yp = Xtr[pool], ytr[pool]
         cache = model.forward(Xp)
         feats = reweighter_features(model, cache, yp)
-        amortized = amortize_after is not None and t >= amortize_after
-        if not amortized:
+        meta_step = (t % refresh_period) < meta_burst
+        if meta_step:
             gnorm = model.per_example_gradnorm(cache, yp)
             gradnorm_passes += 1
         idx, p = rw.sample(feats, batch, rng)
@@ -133,7 +140,7 @@ def train_learned(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
         cache_b = model.forward(Xb)
         grads = model.backward(cache_b, yb, weights=w)
         model.sgd_step(grads, lr)
-        if not amortized:
+        if meta_step:
             cur_cost = rw.meta_update(feats, p, idx, gnorm, meta_lr)
         examples_consumed += batch
         if t % eval_every == 0 or t == steps - 1:
@@ -142,6 +149,5 @@ def train_learned(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
             cost_curve.append((examples_consumed, cur_cost))
             if log:
                 log(f"[learned ] step {t:5d} examples {examples_consumed:8d} "
-                    f"val {v:.4f} phi {np.array2string(rw.phi, precision=2)}"
-                    f"{' [amortized]' if amortized else ''}")
+                    f"val {v:.4f}{' [meta]' if meta_step else ' [frozen]'}")
     return model, curve, cost_curve, rw, gradnorm_passes
