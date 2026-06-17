@@ -92,6 +92,109 @@ def make_corpus(n_chars=200_000, seed=0):
     return data, vocab, stoi
 
 
+def _make_hard_codebook(n_hard_patterns, fixed_seed=12345):
+    """Build a fixed set of K distinct, deterministic rare-letter phrases.
+
+    The codebook is generated from a dedicated fixed RNG so the hard target is
+    identical across corpus seeds: it is therefore a *learnable* (memorizable)
+    target, not random noise. With several distinct patterns it is data-hungry --
+    a model must see each pattern enough times to learn it, which uniform sampling
+    (spending only ~1% of its budget here) is slow to do, while importance
+    sampling reduces the gradient-estimate variance on these rare high-gradient
+    examples and so reaches the same loss with fewer examples. Patterns use only
+    the rare letters {j,k,q,v,w,x,z} so they are never taught by the
+    (common-letter) easy text.
+    """
+    cb_rng = np.random.default_rng(fixed_seed)
+    rare = list("jkqvwxz")
+    phrases = []
+    seen = set()
+    while len(phrases) < n_hard_patterns:
+        L = int(cb_rng.integers(18, 28))
+        chars = []
+        for _ in range(L):
+            # occasional space to give word-like structure, else a rare letter
+            if chars and cb_rng.random() < 0.18:
+                chars.append(" ")
+            else:
+                chars.append(rare[cb_rng.integers(len(rare))])
+        p = "".join(chars).strip()
+        if not p or p in seen:
+            continue
+        seen.add(p)
+        phrases.append(p + " ")
+    return phrases
+
+
+def make_corpus_concentrated(n_chars=200_000, seed=0, easy_frac=0.99,
+                             n_hard_patterns=6):
+    """Synthesise a *concentrated*-difficulty corpus: ~99% trivially easy and a
+    rare (~1%) hard tier, where the rare hard cases dominate the error.
+
+    This is the regime where the informative "pain" is a tiny fraction of the
+    data. A uniform sampler spends ~99% of its gradient budget on examples that
+    are already mastered (near-zero gradient); importance sampling reduces the
+    variance of the gradient estimate by concentrating on the rare high-gradient
+    examples, and so reaches a given loss on the hard tier with substantially
+    fewer training examples.
+
+      - Easy (~easy_frac): a few fully deterministic template phrases built from
+        common letters only, deliberately EXCLUDING the rare letters
+        {j,q,k,v,w,x,z}. Near-zero entropy, mastered quickly so L_easy -> ~0.
+      - Hard (~1-easy_frac): a small fixed codebook of n_hard_patterns distinct,
+        deterministic rare-letter phrases. Deterministic so the loss is reducible
+        (learnable), but with several patterns it is data-hungry: under uniform
+        sampling the rare cases stay under-trained for longer (high L_hard, so
+        they make a big chunk of the total error despite being rare); importance
+        sampling reaches the same hard-tier loss with fewer examples.
+
+    Returns (data, vocab, stoi, char_is_hard), where char_is_hard is a per-character
+    boolean array marking characters that belong to a hard segment. Use
+    hard_example_mask() to turn it into an example-level mask aligned with the
+    targets produced by build_examples().
+    """
+    rng = np.random.default_rng(seed)
+    vocab = list("abcdefghijklmnopqrstuvwxyz .")
+    stoi = {c: i for i, c in enumerate(vocab)}
+
+    # Easy: deterministic, common-letter-only (no j,q,k,v,w,x,z).
+    easy_phrases = [
+        "the cat sat on the mat. ",
+        "a dog ran to the den. ",
+        "she sells sea shells. ",
+        "the sun is on the hill. ",
+        "ned has ten red hens. ",
+    ]
+    # Hard: a small fixed codebook of deterministic rare-letter phrases.
+    hard_phrases = _make_hard_codebook(n_hard_patterns)
+
+    out = []
+    is_hard = []
+    while len(out) < n_chars:
+        if rng.random() < easy_frac:
+            w = easy_phrases[rng.integers(len(easy_phrases))]
+            out.extend(w)
+            is_hard.extend([False] * len(w))
+        else:
+            w = hard_phrases[rng.integers(len(hard_phrases))]
+            out.extend(w)
+            is_hard.extend([True] * len(w))
+    text = "".join(out)[:n_chars]
+    data = np.array([stoi[c] for c in text], dtype=np.int64)
+    char_is_hard = np.array(is_hard[:n_chars], dtype=bool)
+    return data, vocab, stoi, char_is_hard
+
+
+def hard_example_mask(char_is_hard, context=8):
+    """Example-level hard mask aligned with build_examples() targets.
+
+    build_examples maps example i to the target character at position i+context,
+    so example i is 'hard' iff that target character lies in a hard segment.
+    """
+    N = len(char_is_hard) - context
+    return char_is_hard[context:context + N]
+
+
 def build_examples(data, context=8):
     """Turn a 1-D stream into (X, y) of contexts and next-char targets."""
     N = len(data) - context

@@ -1,0 +1,1370 @@
+==== seed 0 ====
+[uniform] step     0 examples        0 val 3.2992
+[uniform] step   100 examples    12800 val 5.3433
+[uniform] step   200 examples    25600 val 5.3193
+[uniform] step   300 examples    38400 val 4.5478
+[uniform] step   400 examples    51200 val 3.7874
+[uniform] step   500 examples    64000 val 3.2181
+[uniform] step   600 examples    76800 val 2.8984
+[uniform] step   700 examples    89600 val 2.7449
+[uniform] step   800 examples   102400 val 2.5614
+[uniform] step   900 examples   115200 val 2.4784
+[uniform] step  1000 examples   128000 val 2.3833
+[uniform] step  1100 examples   140800 val 2.2934
+[uniform] step  1200 examples   153600 val 2.2245
+[uniform] step  1300 examples   166400 val 2.1135
+[uniform] step  1400 examples   179200 val 2.0341
+[uniform] step  1500 examples   192000 val 1.9627
+[uniform] step  1600 examples   204800 val 1.9254
+[uniform] step  1700 examples   217600 val 1.8787
+[uniform] step  1800 examples   230400 val 1.8550
+[uniform] step  1900 examples   243200 val 1.8794
+[uniform] step  2000 examples   256000 val 1.8919
+[uniform] step  2100 examples   268800 val 1.7922
+[uniform] step  2200 examples   281600 val 1.7662
+[uniform] step  2300 examples   294400 val 1.7196
+[uniform] step  2400 examples   307200 val 1.7237
+[uniform] step  2500 examples   320000 val 1.6967
+[uniform] step  2600 examples   332800 val 1.6541
+[uniform] step  2700 examples   345600 val 1.6629
+[uniform] step  2800 examples   358400 val 1.5926
+[uniform] step  2900 examples   371200 val 1.5684
+[uniform] step  3000 examples   384000 val 1.5490
+[uniform] step  3100 examples   396800 val 1.4284
+[uniform] step  3200 examples   409600 val 1.4680
+[uniform] step  3300 examples   422400 val 1.4137
+[uniform] step  3400 examples   435200 val 1.3648
+[uniform] step  3500 examples   448000 val 1.3271
+[uniform] step  3600 examples   460800 val 1.3036
+[uniform] step  3700 examples   473600 val 1.3176
+[uniform] step  3800 examples   486400 val 1.2820
+[uniform] step  3900 examples   499200 val 1.2911
+[uniform] step  4000 examples   512000 val 1.3111
+[uniform] step  4100 examples   524800 val 1.2545
+[uniform] step  4200 examples   537600 val 1.1569
+[uniform] step  4300 examples   550400 val 1.1966
+[uniform] step  4400 examples   563200 val 1.1418
+[uniform] step  4500 examples   576000 val 1.1125
+[uniform] step  4600 examples   588800 val 1.1183
+[uniform] step  4700 examples   601600 val 1.1555
+[uniform] step  4800 examples   614400 val 1.1350
+[uniform] step  4900 examples   627200 val 1.1009
+[uniform] step  5000 examples   640000 val 1.0546
+[uniform] step  5100 examples   652800 val 1.0412
+[uniform] step  5200 examples   665600 val 1.0098
+[uniform] step  5300 examples   678400 val 1.0250
+[uniform] step  5400 examples   691200 val 1.0020
+[uniform] step  5500 examples   704000 val 0.9983
+[uniform] step  5600 examples   716800 val 0.9437
+[uniform] step  5700 examples   729600 val 0.9383
+[uniform] step  5800 examples   742400 val 0.9415
+[uniform] step  5900 examples   755200 val 0.9321
+[uniform] step  6000 examples   768000 val 0.9041
+[uniform] step  6100 examples   780800 val 0.8745
+[uniform] step  6200 examples   793600 val 0.8424
+[uniform] step  6300 examples   806400 val 0.8876
+[uniform] step  6400 examples   819200 val 0.8591
+[uniform] step  6500 examples   832000 val 0.8197
+[uniform] step  6600 examples   844800 val 0.8019
+[uniform] step  6700 examples   857600 val 0.8480
+[uniform] step  6800 examples   870400 val 0.7661
+[uniform] step  6900 examples   883200 val 0.8006
+[uniform] step  7000 examples   896000 val 0.7789
+[uniform] step  7100 examples   908800 val 0.7178
+[uniform] step  7200 examples   921600 val 0.7667
+[uniform] step  7300 examples   934400 val 0.7597
+[uniform] step  7400 examples   947200 val 0.7671
+[uniform] step  7500 examples   960000 val 0.7680
+[uniform] step  7600 examples   972800 val 0.7107
+[uniform] step  7700 examples   985600 val 0.6798
+[uniform] step  7800 examples   998400 val 0.7023
+[uniform] step  7900 examples  1011200 val 0.6759
+[uniform] step  8000 examples  1024000 val 0.6492
+[uniform] step  8100 examples  1036800 val 0.6696
+[uniform] step  8200 examples  1049600 val 0.6719
+[uniform] step  8300 examples  1062400 val 0.6454
+[uniform] step  8400 examples  1075200 val 0.6635
+[uniform] step  8500 examples  1088000 val 0.6428
+[uniform] step  8600 examples  1100800 val 0.6494
+[uniform] step  8700 examples  1113600 val 0.6461
+[uniform] step  8800 examples  1126400 val 0.6353
+[uniform] step  8900 examples  1139200 val 0.5929
+[uniform] step  8999 examples  1151872 val 0.5594
+[gradnorm] step     0 examples      128 val 3.3147
+[gradnorm] step   100 examples    12928 val 5.3715
+[gradnorm] step   200 examples    25728 val 5.1755
+[gradnorm] step   300 examples    38528 val 4.4165
+[gradnorm] step   400 examples    51328 val 3.6019
+[gradnorm] step   500 examples    64128 val 3.2010
+[gradnorm] step   600 examples    76928 val 2.8072
+[gradnorm] step   700 examples    89728 val 2.5523
+[gradnorm] step   800 examples   102528 val 2.4643
+[gradnorm] step   900 examples   115328 val 2.3147
+[gradnorm] step  1000 examples   128128 val 2.2120
+[gradnorm] step  1100 examples   140928 val 2.0976
+[gradnorm] step  1200 examples   153728 val 2.0294
+[gradnorm] step  1300 examples   166528 val 1.9229
+[gradnorm] step  1400 examples   179328 val 1.9238
+[gradnorm] step  1500 examples   192128 val 1.8745
+[gradnorm] step  1600 examples   204928 val 1.7831
+[gradnorm] step  1700 examples   217728 val 1.7263
+[gradnorm] step  1800 examples   230528 val 1.6568
+[gradnorm] step  1900 examples   243328 val 1.5843
+[gradnorm] step  2000 examples   256128 val 1.5760
+[gradnorm] step  2100 examples   268928 val 1.6050
+[gradnorm] step  2200 examples   281728 val 1.4505
+[gradnorm] step  2300 examples   294528 val 1.4028
+[gradnorm] step  2400 examples   307328 val 1.3808
+[gradnorm] step  2500 examples   320128 val 1.3096
+[gradnorm] step  2600 examples   332928 val 1.2892
+[gradnorm] step  2700 examples   345728 val 1.2629
+[gradnorm] step  2800 examples   358528 val 1.1810
+[gradnorm] step  2900 examples   371328 val 1.2216
+[gradnorm] step  3000 examples   384128 val 1.1089
+[gradnorm] step  3100 examples   396928 val 1.1445
+[gradnorm] step  3200 examples   409728 val 1.0398
+[gradnorm] step  3300 examples   422528 val 1.0082
+[gradnorm] step  3400 examples   435328 val 0.9479
+[gradnorm] step  3500 examples   448128 val 0.8982
+[gradnorm] step  3600 examples   460928 val 0.9643
+[gradnorm] step  3700 examples   473728 val 0.8001
+[gradnorm] step  3800 examples   486528 val 0.8495
+[gradnorm] step  3900 examples   499328 val 0.8063
+[gradnorm] step  4000 examples   512128 val 0.7899
+[gradnorm] step  4100 examples   524928 val 0.7654
+[gradnorm] step  4200 examples   537728 val 0.7379
+[gradnorm] step  4300 examples   550528 val 0.6785
+[gradnorm] step  4400 examples   563328 val 0.7181
+[gradnorm] step  4500 examples   576128 val 0.6515
+[gradnorm] step  4600 examples   588928 val 0.6866
+[gradnorm] step  4700 examples   601728 val 0.6491
+[gradnorm] step  4800 examples   614528 val 0.6126
+[gradnorm] step  4900 examples   627328 val 0.5809
+[gradnorm] step  5000 examples   640128 val 0.5576
+[gradnorm] step  5100 examples   652928 val 0.5687
+[gradnorm] step  5200 examples   665728 val 0.5530
+[gradnorm] step  5300 examples   678528 val 0.4583
+[gradnorm] step  5400 examples   691328 val 0.4797
+[gradnorm] step  5500 examples   704128 val 0.5961
+[gradnorm] step  5600 examples   716928 val 0.5139
+[gradnorm] step  5700 examples   729728 val 0.5496
+[gradnorm] step  5800 examples   742528 val 0.5743
+[gradnorm] step  5900 examples   755328 val 0.5409
+[gradnorm] step  6000 examples   768128 val 0.5097
+[gradnorm] step  6100 examples   780928 val 0.4755
+[gradnorm] step  6200 examples   793728 val 0.5702
+[gradnorm] step  6300 examples   806528 val 0.4847
+[gradnorm] step  6400 examples   819328 val 0.4938
+[gradnorm] step  6500 examples   832128 val 0.4737
+[gradnorm] step  6600 examples   844928 val 0.5098
+[gradnorm] step  6700 examples   857728 val 0.4262
+[gradnorm] step  6800 examples   870528 val 0.5004
+[gradnorm] step  6900 examples   883328 val 0.4951
+[gradnorm] step  7000 examples   896128 val 0.4911
+[gradnorm] step  7100 examples   908928 val 0.5037
+[gradnorm] step  7200 examples   921728 val 0.5342
+[gradnorm] step  7300 examples   934528 val 0.4499
+[gradnorm] step  7400 examples   947328 val 0.4393
+[gradnorm] step  7500 examples   960128 val 0.4711
+[gradnorm] step  7600 examples   972928 val 0.4382
+[gradnorm] step  7700 examples   985728 val 0.4968
+[gradnorm] step  7800 examples   998528 val 0.4520
+[gradnorm] step  7900 examples  1011328 val 0.4612
+[gradnorm] step  8000 examples  1024128 val 0.4625
+[gradnorm] step  8100 examples  1036928 val 0.4383
+[gradnorm] step  8200 examples  1049728 val 0.4817
+[gradnorm] step  8300 examples  1062528 val 0.4174
+[gradnorm] step  8400 examples  1075328 val 0.4859
+[gradnorm] step  8500 examples  1088128 val 0.4347
+[gradnorm] step  8600 examples  1100928 val 0.4429
+[gradnorm] step  8700 examples  1113728 val 0.4522
+[gradnorm] step  8800 examples  1126528 val 0.3844
+[gradnorm] step  8900 examples  1139328 val 0.4159
+[gradnorm] step  8999 examples  1152000 val 0.4151
+[learned ] step     0 examples      128 val 3.3157 [meta]
+[learned ] step   100 examples    12928 val 5.4272 [frozen]
+[learned ] step   200 examples    25728 val 5.2107 [frozen]
+[learned ] step   300 examples    38528 val 4.4886 [frozen]
+[learned ] step   400 examples    51328 val 3.7971 [frozen]
+[learned ] step   500 examples    64128 val 3.2998 [frozen]
+[learned ] step   600 examples    76928 val 2.9412 [frozen]
+[learned ] step   700 examples    89728 val 2.7059 [frozen]
+[learned ] step   800 examples   102528 val 2.5685 [frozen]
+[learned ] step   900 examples   115328 val 2.4156 [frozen]
+[learned ] step  1000 examples   128128 val 2.2900 [meta]
+[learned ] step  1100 examples   140928 val 2.1991 [frozen]
+[learned ] step  1200 examples   153728 val 2.1075 [frozen]
+[learned ] step  1300 examples   166528 val 2.0398 [frozen]
+[learned ] step  1400 examples   179328 val 1.9831 [frozen]
+[learned ] step  1500 examples   192128 val 1.9416 [frozen]
+[learned ] step  1600 examples   204928 val 1.8869 [frozen]
+[learned ] step  1700 examples   217728 val 1.8557 [frozen]
+[learned ] step  1800 examples   230528 val 1.7728 [frozen]
+[learned ] step  1900 examples   243328 val 1.7271 [frozen]
+[learned ] step  2000 examples   256128 val 1.7240 [meta]
+[learned ] step  2100 examples   268928 val 1.8634 [frozen]
+[learned ] step  2200 examples   281728 val 1.6330 [frozen]
+[learned ] step  2300 examples   294528 val 1.5839 [frozen]
+[learned ] step  2400 examples   307328 val 1.5333 [frozen]
+[learned ] step  2500 examples   320128 val 1.5300 [frozen]
+[learned ] step  2600 examples   332928 val 1.5255 [frozen]
+[learned ] step  2700 examples   345728 val 1.3938 [frozen]
+[learned ] step  2800 examples   358528 val 1.2734 [frozen]
+[learned ] step  2900 examples   371328 val 1.2136 [frozen]
+[learned ] step  3000 examples   384128 val 1.2402 [meta]
+[learned ] step  3100 examples   396928 val 1.1727 [frozen]
+[learned ] step  3200 examples   409728 val 1.1373 [frozen]
+[learned ] step  3300 examples   422528 val 1.0920 [frozen]
+[learned ] step  3400 examples   435328 val 1.0346 [frozen]
+[learned ] step  3500 examples   448128 val 0.9396 [frozen]
+[learned ] step  3600 examples   460928 val 1.0064 [frozen]
+[learned ] step  3700 examples   473728 val 0.8087 [frozen]
+[learned ] step  3800 examples   486528 val 0.8911 [frozen]
+[learned ] step  3900 examples   499328 val 0.8272 [frozen]
+[learned ] step  4000 examples   512128 val 0.8185 [meta]
+[learned ] step  4100 examples   524928 val 0.7976 [frozen]
+[learned ] step  4200 examples   537728 val 0.7795 [frozen]
+[learned ] step  4300 examples   550528 val 0.8433 [frozen]
+[learned ] step  4400 examples   563328 val 0.7854 [frozen]
+[learned ] step  4500 examples   576128 val 0.7512 [frozen]
+[learned ] step  4600 examples   588928 val 0.7432 [frozen]
+[learned ] step  4700 examples   601728 val 0.7292 [frozen]
+[learned ] step  4800 examples   614528 val 0.7095 [frozen]
+[learned ] step  4900 examples   627328 val 0.6710 [frozen]
+[learned ] step  5000 examples   640128 val 0.6365 [meta]
+[learned ] step  5100 examples   652928 val 0.6250 [frozen]
+[learned ] step  5200 examples   665728 val 0.6635 [frozen]
+[learned ] step  5300 examples   678528 val 0.5559 [frozen]
+[learned ] step  5400 examples   691328 val 0.6499 [frozen]
+[learned ] step  5500 examples   704128 val 0.6257 [frozen]
+[learned ] step  5600 examples   716928 val 0.5692 [frozen]
+[learned ] step  5700 examples   729728 val 0.5621 [frozen]
+[learned ] step  5800 examples   742528 val 0.6059 [frozen]
+[learned ] step  5900 examples   755328 val 0.5335 [frozen]
+[learned ] step  6000 examples   768128 val 0.5410 [meta]
+[learned ] step  6100 examples   780928 val 0.4921 [frozen]
+[learned ] step  6200 examples   793728 val 0.5459 [frozen]
+[learned ] step  6300 examples   806528 val 0.5080 [frozen]
+[learned ] step  6400 examples   819328 val 0.5043 [frozen]
+[learned ] step  6500 examples   832128 val 0.4942 [frozen]
+[learned ] step  6600 examples   844928 val 0.5230 [frozen]
+[learned ] step  6700 examples   857728 val 0.4689 [frozen]
+[learned ] step  6800 examples   870528 val 0.4909 [frozen]
+[learned ] step  6900 examples   883328 val 0.4858 [frozen]
+[learned ] step  7000 examples   896128 val 0.5035 [meta]
+[learned ] step  7100 examples   908928 val 0.5141 [frozen]
+[learned ] step  7200 examples   921728 val 0.5491 [frozen]
+[learned ] step  7300 examples   934528 val 0.5004 [frozen]
+[learned ] step  7400 examples   947328 val 0.4981 [frozen]
+[learned ] step  7500 examples   960128 val 0.5164 [frozen]
+[learned ] step  7600 examples   972928 val 0.5252 [frozen]
+[learned ] step  7700 examples   985728 val 0.4166 [frozen]
+[learned ] step  7800 examples   998528 val 0.4968 [frozen]
+[learned ] step  7900 examples  1011328 val 0.4712 [frozen]
+[learned ] step  8000 examples  1024128 val 0.4557 [meta]
+[learned ] step  8100 examples  1036928 val 0.4724 [frozen]
+[learned ] step  8200 examples  1049728 val 0.4586 [frozen]
+[learned ] step  8300 examples  1062528 val 0.3988 [frozen]
+[learned ] step  8400 examples  1075328 val 0.4578 [frozen]
+[learned ] step  8500 examples  1088128 val 0.4606 [frozen]
+[learned ] step  8600 examples  1100928 val 0.4283 [frozen]
+[learned ] step  8700 examples  1113728 val 0.4574 [frozen]
+[learned ] step  8800 examples  1126528 val 0.3988 [frozen]
+[learned ] step  8900 examples  1139328 val 0.4102 [frozen]
+[learned ] step  8999 examples  1152000 val 0.4191 [frozen]
+==== seed 1 ====
+[uniform] step     0 examples        0 val 3.3058
+[uniform] step   100 examples    12800 val 5.3210
+[uniform] step   200 examples    25600 val 4.9598
+[uniform] step   300 examples    38400 val 4.1542
+[uniform] step   400 examples    51200 val 3.3093
+[uniform] step   500 examples    64000 val 2.8918
+[uniform] step   600 examples    76800 val 2.6252
+[uniform] step   700 examples    89600 val 2.4900
+[uniform] step   800 examples   102400 val 2.3540
+[uniform] step   900 examples   115200 val 2.1628
+[uniform] step  1000 examples   128000 val 2.1016
+[uniform] step  1100 examples   140800 val 2.0298
+[uniform] step  1200 examples   153600 val 1.9794
+[uniform] step  1300 examples   166400 val 1.9349
+[uniform] step  1400 examples   179200 val 1.8698
+[uniform] step  1500 examples   192000 val 1.8524
+[uniform] step  1600 examples   204800 val 1.8161
+[uniform] step  1700 examples   217600 val 1.8152
+[uniform] step  1800 examples   230400 val 1.7444
+[uniform] step  1900 examples   243200 val 1.7070
+[uniform] step  2000 examples   256000 val 1.6719
+[uniform] step  2100 examples   268800 val 1.6153
+[uniform] step  2200 examples   281600 val 1.6146
+[uniform] step  2300 examples   294400 val 1.5727
+[uniform] step  2400 examples   307200 val 1.5549
+[uniform] step  2500 examples   320000 val 1.5288
+[uniform] step  2600 examples   332800 val 1.5166
+[uniform] step  2700 examples   345600 val 1.4849
+[uniform] step  2800 examples   358400 val 1.4471
+[uniform] step  2900 examples   371200 val 1.4519
+[uniform] step  3000 examples   384000 val 1.4325
+[uniform] step  3100 examples   396800 val 1.3636
+[uniform] step  3200 examples   409600 val 1.3814
+[uniform] step  3300 examples   422400 val 1.3842
+[uniform] step  3400 examples   435200 val 1.3539
+[uniform] step  3500 examples   448000 val 1.2945
+[uniform] step  3600 examples   460800 val 1.2930
+[uniform] step  3700 examples   473600 val 1.2781
+[uniform] step  3800 examples   486400 val 1.2008
+[uniform] step  3900 examples   499200 val 1.1925
+[uniform] step  4000 examples   512000 val 1.2045
+[uniform] step  4100 examples   524800 val 1.1898
+[uniform] step  4200 examples   537600 val 1.1599
+[uniform] step  4300 examples   550400 val 1.0667
+[uniform] step  4400 examples   563200 val 1.1024
+[uniform] step  4500 examples   576000 val 1.0628
+[uniform] step  4600 examples   588800 val 1.0084
+[uniform] step  4700 examples   601600 val 0.9997
+[uniform] step  4800 examples   614400 val 0.9577
+[uniform] step  4900 examples   627200 val 0.9760
+[uniform] step  5000 examples   640000 val 0.8988
+[uniform] step  5100 examples   652800 val 0.9401
+[uniform] step  5200 examples   665600 val 0.9386
+[uniform] step  5300 examples   678400 val 0.8963
+[uniform] step  5400 examples   691200 val 0.8595
+[uniform] step  5500 examples   704000 val 0.8579
+[uniform] step  5600 examples   716800 val 0.8812
+[uniform] step  5700 examples   729600 val 0.8261
+[uniform] step  5800 examples   742400 val 0.7887
+[uniform] step  5900 examples   755200 val 0.8188
+[uniform] step  6000 examples   768000 val 0.7676
+[uniform] step  6100 examples   780800 val 0.7836
+[uniform] step  6200 examples   793600 val 0.7147
+[uniform] step  6300 examples   806400 val 0.7304
+[uniform] step  6400 examples   819200 val 0.6562
+[uniform] step  6500 examples   832000 val 0.6526
+[uniform] step  6600 examples   844800 val 0.6560
+[uniform] step  6700 examples   857600 val 0.6507
+[uniform] step  6800 examples   870400 val 0.6780
+[uniform] step  6900 examples   883200 val 0.6731
+[uniform] step  7000 examples   896000 val 0.6250
+[uniform] step  7100 examples   908800 val 0.6308
+[uniform] step  7200 examples   921600 val 0.5996
+[uniform] step  7300 examples   934400 val 0.5695
+[uniform] step  7400 examples   947200 val 0.5471
+[uniform] step  7500 examples   960000 val 0.5846
+[uniform] step  7600 examples   972800 val 0.6422
+[uniform] step  7700 examples   985600 val 0.5076
+[uniform] step  7800 examples   998400 val 0.5426
+[uniform] step  7900 examples  1011200 val 0.5413
+[uniform] step  8000 examples  1024000 val 0.5457
+[uniform] step  8100 examples  1036800 val 0.5682
+[uniform] step  8200 examples  1049600 val 0.4786
+[uniform] step  8300 examples  1062400 val 0.5124
+[uniform] step  8400 examples  1075200 val 0.5216
+[uniform] step  8500 examples  1088000 val 0.5043
+[uniform] step  8600 examples  1100800 val 0.5636
+[uniform] step  8700 examples  1113600 val 0.5096
+[uniform] step  8800 examples  1126400 val 0.5266
+[uniform] step  8900 examples  1139200 val 0.5212
+[uniform] step  8999 examples  1151872 val 0.4963
+[gradnorm] step     0 examples      128 val 3.3261
+[gradnorm] step   100 examples    12928 val 5.4717
+[gradnorm] step   200 examples    25728 val 4.7965
+[gradnorm] step   300 examples    38528 val 3.8418
+[gradnorm] step   400 examples    51328 val 3.2025
+[gradnorm] step   500 examples    64128 val 2.7467
+[gradnorm] step   600 examples    76928 val 2.5438
+[gradnorm] step   700 examples    89728 val 2.2956
+[gradnorm] step   800 examples   102528 val 2.1728
+[gradnorm] step   900 examples   115328 val 2.0489
+[gradnorm] step  1000 examples   128128 val 1.9258
+[gradnorm] step  1100 examples   140928 val 1.9241
+[gradnorm] step  1200 examples   153728 val 1.8374
+[gradnorm] step  1300 examples   166528 val 1.7833
+[gradnorm] step  1400 examples   179328 val 1.7719
+[gradnorm] step  1500 examples   192128 val 1.6733
+[gradnorm] step  1600 examples   204928 val 1.6296
+[gradnorm] step  1700 examples   217728 val 1.6092
+[gradnorm] step  1800 examples   230528 val 1.5435
+[gradnorm] step  1900 examples   243328 val 1.4980
+[gradnorm] step  2000 examples   256128 val 1.4904
+[gradnorm] step  2100 examples   268928 val 1.4708
+[gradnorm] step  2200 examples   281728 val 1.4279
+[gradnorm] step  2300 examples   294528 val 1.3298
+[gradnorm] step  2400 examples   307328 val 1.2845
+[gradnorm] step  2500 examples   320128 val 1.2531
+[gradnorm] step  2600 examples   332928 val 1.1975
+[gradnorm] step  2700 examples   345728 val 1.1248
+[gradnorm] step  2800 examples   358528 val 1.1730
+[gradnorm] step  2900 examples   371328 val 1.0792
+[gradnorm] step  3000 examples   384128 val 1.0531
+[gradnorm] step  3100 examples   396928 val 0.9639
+[gradnorm] step  3200 examples   409728 val 0.8955
+[gradnorm] step  3300 examples   422528 val 0.8396
+[gradnorm] step  3400 examples   435328 val 0.7822
+[gradnorm] step  3500 examples   448128 val 0.8624
+[gradnorm] step  3600 examples   460928 val 0.7115
+[gradnorm] step  3700 examples   473728 val 0.7360
+[gradnorm] step  3800 examples   486528 val 0.6962
+[gradnorm] step  3900 examples   499328 val 0.6857
+[gradnorm] step  4000 examples   512128 val 0.6510
+[gradnorm] step  4100 examples   524928 val 0.6529
+[gradnorm] step  4200 examples   537728 val 0.6294
+[gradnorm] step  4300 examples   550528 val 0.5971
+[gradnorm] step  4400 examples   563328 val 0.4984
+[gradnorm] step  4500 examples   576128 val 0.4799
+[gradnorm] step  4600 examples   588928 val 0.4779
+[gradnorm] step  4700 examples   601728 val 0.5021
+[gradnorm] step  4800 examples   614528 val 0.5237
+[gradnorm] step  4900 examples   627328 val 0.6445
+[gradnorm] step  5000 examples   640128 val 0.4962
+[gradnorm] step  5100 examples   652928 val 0.5003
+[gradnorm] step  5200 examples   665728 val 0.4141
+[gradnorm] step  5300 examples   678528 val 0.4683
+[gradnorm] step  5400 examples   691328 val 0.4380
+[gradnorm] step  5500 examples   704128 val 0.4358
+[gradnorm] step  5600 examples   716928 val 0.4102
+[gradnorm] step  5700 examples   729728 val 0.4290
+[gradnorm] step  5800 examples   742528 val 0.4155
+[gradnorm] step  5900 examples   755328 val 0.4604
+[gradnorm] step  6000 examples   768128 val 0.4195
+[gradnorm] step  6100 examples   780928 val 0.3776
+[gradnorm] step  6200 examples   793728 val 0.4147
+[gradnorm] step  6300 examples   806528 val 0.4032
+[gradnorm] step  6400 examples   819328 val 0.4406
+[gradnorm] step  6500 examples   832128 val 0.4387
+[gradnorm] step  6600 examples   844928 val 0.3931
+[gradnorm] step  6700 examples   857728 val 0.4006
+[gradnorm] step  6800 examples   870528 val 0.3523
+[gradnorm] step  6900 examples   883328 val 0.4218
+[gradnorm] step  7000 examples   896128 val 0.4379
+[gradnorm] step  7100 examples   908928 val 0.4023
+[gradnorm] step  7200 examples   921728 val 0.4354
+[gradnorm] step  7300 examples   934528 val 0.4473
+[gradnorm] step  7400 examples   947328 val 0.4932
+[gradnorm] step  7500 examples   960128 val 0.4551
+[gradnorm] step  7600 examples   972928 val 0.4274
+[gradnorm] step  7700 examples   985728 val 0.4586
+[gradnorm] step  7800 examples   998528 val 0.4584
+[gradnorm] step  7900 examples  1011328 val 0.4109
+[gradnorm] step  8000 examples  1024128 val 0.4002
+[gradnorm] step  8100 examples  1036928 val 0.4210
+[gradnorm] step  8200 examples  1049728 val 0.4039
+[gradnorm] step  8300 examples  1062528 val 0.3928
+[gradnorm] step  8400 examples  1075328 val 0.3779
+[gradnorm] step  8500 examples  1088128 val 0.3542
+[gradnorm] step  8600 examples  1100928 val 0.3516
+[gradnorm] step  8700 examples  1113728 val 0.4374
+[gradnorm] step  8800 examples  1126528 val 0.3989
+[gradnorm] step  8900 examples  1139328 val 0.4212
+[gradnorm] step  8999 examples  1152000 val 0.4612
+[learned ] step     0 examples      128 val 3.3121 [meta]
+[learned ] step   100 examples    12928 val 5.4151 [frozen]
+[learned ] step   200 examples    25728 val 4.8014 [frozen]
+[learned ] step   300 examples    38528 val 4.0073 [frozen]
+[learned ] step   400 examples    51328 val 3.2865 [frozen]
+[learned ] step   500 examples    64128 val 2.8965 [frozen]
+[learned ] step   600 examples    76928 val 2.6382 [frozen]
+[learned ] step   700 examples    89728 val 2.4481 [frozen]
+[learned ] step   800 examples   102528 val 2.2742 [frozen]
+[learned ] step   900 examples   115328 val 2.1717 [frozen]
+[learned ] step  1000 examples   128128 val 2.0437 [meta]
+[learned ] step  1100 examples   140928 val 2.0050 [frozen]
+[learned ] step  1200 examples   153728 val 2.0289 [frozen]
+[learned ] step  1300 examples   166528 val 1.9749 [frozen]
+[learned ] step  1400 examples   179328 val 1.8478 [frozen]
+[learned ] step  1500 examples   192128 val 1.7781 [frozen]
+[learned ] step  1600 examples   204928 val 1.7762 [frozen]
+[learned ] step  1700 examples   217728 val 1.6655 [frozen]
+[learned ] step  1800 examples   230528 val 1.9203 [frozen]
+[learned ] step  1900 examples   243328 val 1.6299 [frozen]
+[learned ] step  2000 examples   256128 val 1.5309 [meta]
+[learned ] step  2100 examples   268928 val 1.4710 [frozen]
+[learned ] step  2200 examples   281728 val 1.4497 [frozen]
+[learned ] step  2300 examples   294528 val 1.3697 [frozen]
+[learned ] step  2400 examples   307328 val 1.4167 [frozen]
+[learned ] step  2500 examples   320128 val 1.2379 [frozen]
+[learned ] step  2600 examples   332928 val 1.2995 [frozen]
+[learned ] step  2700 examples   345728 val 1.1767 [frozen]
+[learned ] step  2800 examples   358528 val 1.1605 [frozen]
+[learned ] step  2900 examples   371328 val 1.2737 [frozen]
+[learned ] step  3000 examples   384128 val 1.0565 [meta]
+[learned ] step  3100 examples   396928 val 1.1320 [frozen]
+[learned ] step  3200 examples   409728 val 0.9268 [frozen]
+[learned ] step  3300 examples   422528 val 0.9297 [frozen]
+[learned ] step  3400 examples   435328 val 0.7935 [frozen]
+[learned ] step  3500 examples   448128 val 0.8078 [frozen]
+[learned ] step  3600 examples   460928 val 0.7646 [frozen]
+[learned ] step  3700 examples   473728 val 0.8030 [frozen]
+[learned ] step  3800 examples   486528 val 0.7468 [frozen]
+[learned ] step  3900 examples   499328 val 0.6696 [frozen]
+[learned ] step  4000 examples   512128 val 0.6829 [meta]
+[learned ] step  4100 examples   524928 val 0.7230 [frozen]
+[learned ] step  4200 examples   537728 val 0.6256 [frozen]
+[learned ] step  4300 examples   550528 val 0.5966 [frozen]
+[learned ] step  4400 examples   563328 val 0.5495 [frozen]
+[learned ] step  4500 examples   576128 val 0.4911 [frozen]
+[learned ] step  4600 examples   588928 val 0.5072 [frozen]
+[learned ] step  4700 examples   601728 val 0.4883 [frozen]
+[learned ] step  4800 examples   614528 val 0.5022 [frozen]
+[learned ] step  4900 examples   627328 val 0.5410 [frozen]
+[learned ] step  5000 examples   640128 val 0.4778 [meta]
+[learned ] step  5100 examples   652928 val 0.5478 [frozen]
+[learned ] step  5200 examples   665728 val 0.5180 [frozen]
+[learned ] step  5300 examples   678528 val 0.5462 [frozen]
+[learned ] step  5400 examples   691328 val 0.4526 [frozen]
+[learned ] step  5500 examples   704128 val 0.4261 [frozen]
+[learned ] step  5600 examples   716928 val 0.4530 [frozen]
+[learned ] step  5700 examples   729728 val 0.5161 [frozen]
+[learned ] step  5800 examples   742528 val 0.5182 [frozen]
+[learned ] step  5900 examples   755328 val 0.3469 [frozen]
+[learned ] step  6000 examples   768128 val 0.4212 [meta]
+[learned ] step  6100 examples   780928 val 0.4188 [frozen]
+[learned ] step  6200 examples   793728 val 0.4456 [frozen]
+[learned ] step  6300 examples   806528 val 0.4203 [frozen]
+[learned ] step  6400 examples   819328 val 0.4158 [frozen]
+[learned ] step  6500 examples   832128 val 0.4311 [frozen]
+[learned ] step  6600 examples   844928 val 0.4166 [frozen]
+[learned ] step  6700 examples   857728 val 0.4927 [frozen]
+[learned ] step  6800 examples   870528 val 0.4486 [frozen]
+[learned ] step  6900 examples   883328 val 0.4102 [frozen]
+[learned ] step  7000 examples   896128 val 0.6116 [meta]
+[learned ] step  7100 examples   908928 val 0.4444 [frozen]
+[learned ] step  7200 examples   921728 val 0.4155 [frozen]
+[learned ] step  7300 examples   934528 val 0.4176 [frozen]
+[learned ] step  7400 examples   947328 val 0.4190 [frozen]
+[learned ] step  7500 examples   960128 val 0.4282 [frozen]
+[learned ] step  7600 examples   972928 val 0.4316 [frozen]
+[learned ] step  7700 examples   985728 val 0.3820 [frozen]
+[learned ] step  7800 examples   998528 val 0.3954 [frozen]
+[learned ] step  7900 examples  1011328 val 0.3787 [frozen]
+[learned ] step  8000 examples  1024128 val 0.3649 [meta]
+[learned ] step  8100 examples  1036928 val 0.4207 [frozen]
+[learned ] step  8200 examples  1049728 val 0.3800 [frozen]
+[learned ] step  8300 examples  1062528 val 0.4803 [frozen]
+[learned ] step  8400 examples  1075328 val 0.4580 [frozen]
+[learned ] step  8500 examples  1088128 val 0.4286 [frozen]
+[learned ] step  8600 examples  1100928 val 0.4222 [frozen]
+[learned ] step  8700 examples  1113728 val 0.4582 [frozen]
+[learned ] step  8800 examples  1126528 val 0.3944 [frozen]
+[learned ] step  8900 examples  1139328 val 0.4294 [frozen]
+[learned ] step  8999 examples  1152000 val 0.3777 [frozen]
+==== seed 2 ====
+[uniform] step     0 examples        0 val 3.3234
+[uniform] step   100 examples    12800 val 5.5495
+[uniform] step   200 examples    25600 val 4.9281
+[uniform] step   300 examples    38400 val 4.0739
+[uniform] step   400 examples    51200 val 3.2568
+[uniform] step   500 examples    64000 val 2.9204
+[uniform] step   600 examples    76800 val 2.6710
+[uniform] step   700 examples    89600 val 2.3583
+[uniform] step   800 examples   102400 val 2.1896
+[uniform] step   900 examples   115200 val 2.0852
+[uniform] step  1000 examples   128000 val 2.0188
+[uniform] step  1100 examples   140800 val 1.8043
+[uniform] step  1200 examples   153600 val 1.7250
+[uniform] step  1300 examples   166400 val 1.6379
+[uniform] step  1400 examples   179200 val 1.5729
+[uniform] step  1500 examples   192000 val 1.5403
+[uniform] step  1600 examples   204800 val 1.5243
+[uniform] step  1700 examples   217600 val 1.4770
+[uniform] step  1800 examples   230400 val 1.4374
+[uniform] step  1900 examples   243200 val 1.4273
+[uniform] step  2000 examples   256000 val 1.3374
+[uniform] step  2100 examples   268800 val 1.2388
+[uniform] step  2200 examples   281600 val 1.2152
+[uniform] step  2300 examples   294400 val 1.2121
+[uniform] step  2400 examples   307200 val 1.1077
+[uniform] step  2500 examples   320000 val 1.1362
+[uniform] step  2600 examples   332800 val 1.0988
+[uniform] step  2700 examples   345600 val 1.0949
+[uniform] step  2800 examples   358400 val 1.0451
+[uniform] step  2900 examples   371200 val 1.0399
+[uniform] step  3000 examples   384000 val 0.9616
+[uniform] step  3100 examples   396800 val 0.9560
+[uniform] step  3200 examples   409600 val 0.9336
+[uniform] step  3300 examples   422400 val 0.9257
+[uniform] step  3400 examples   435200 val 0.9025
+[uniform] step  3500 examples   448000 val 0.8687
+[uniform] step  3600 examples   460800 val 0.8324
+[uniform] step  3700 examples   473600 val 0.8800
+[uniform] step  3800 examples   486400 val 0.7958
+[uniform] step  3900 examples   499200 val 0.7879
+[uniform] step  4000 examples   512000 val 0.7824
+[uniform] step  4100 examples   524800 val 0.7683
+[uniform] step  4200 examples   537600 val 0.7773
+[uniform] step  4300 examples   550400 val 0.7569
+[uniform] step  4400 examples   563200 val 0.7219
+[uniform] step  4500 examples   576000 val 0.6948
+[uniform] step  4600 examples   588800 val 0.7036
+[uniform] step  4700 examples   601600 val 0.7154
+[uniform] step  4800 examples   614400 val 0.6534
+[uniform] step  4900 examples   627200 val 0.6997
+[uniform] step  5000 examples   640000 val 0.6488
+[uniform] step  5100 examples   652800 val 0.6649
+[uniform] step  5200 examples   665600 val 0.6221
+[uniform] step  5300 examples   678400 val 0.6386
+[uniform] step  5400 examples   691200 val 0.6253
+[uniform] step  5500 examples   704000 val 0.6159
+[uniform] step  5600 examples   716800 val 0.5721
+[uniform] step  5700 examples   729600 val 0.5998
+[uniform] step  5800 examples   742400 val 0.5771
+[uniform] step  5900 examples   755200 val 0.5370
+[uniform] step  6000 examples   768000 val 0.5731
+[uniform] step  6100 examples   780800 val 0.5274
+[uniform] step  6200 examples   793600 val 0.5341
+[uniform] step  6300 examples   806400 val 0.5340
+[uniform] step  6400 examples   819200 val 0.5515
+[uniform] step  6500 examples   832000 val 0.5407
+[uniform] step  6600 examples   844800 val 0.5684
+[uniform] step  6700 examples   857600 val 0.5370
+[uniform] step  6800 examples   870400 val 0.4785
+[uniform] step  6900 examples   883200 val 0.4897
+[uniform] step  7000 examples   896000 val 0.5308
+[uniform] step  7100 examples   908800 val 0.5048
+[uniform] step  7200 examples   921600 val 0.5144
+[uniform] step  7300 examples   934400 val 0.5122
+[uniform] step  7400 examples   947200 val 0.4528
+[uniform] step  7500 examples   960000 val 0.4853
+[uniform] step  7600 examples   972800 val 0.4736
+[uniform] step  7700 examples   985600 val 0.4671
+[uniform] step  7800 examples   998400 val 0.4696
+[uniform] step  7900 examples  1011200 val 0.4090
+[uniform] step  8000 examples  1024000 val 0.4335
+[uniform] step  8100 examples  1036800 val 0.4691
+[uniform] step  8200 examples  1049600 val 0.4637
+[uniform] step  8300 examples  1062400 val 0.4444
+[uniform] step  8400 examples  1075200 val 0.4704
+[uniform] step  8500 examples  1088000 val 0.4221
+[uniform] step  8600 examples  1100800 val 0.4629
+[uniform] step  8700 examples  1113600 val 0.4895
+[uniform] step  8800 examples  1126400 val 0.4694
+[uniform] step  8900 examples  1139200 val 0.4390
+[uniform] step  8999 examples  1151872 val 0.4139
+[gradnorm] step     0 examples      128 val 3.3123
+[gradnorm] step   100 examples    12928 val 5.4542
+[gradnorm] step   200 examples    25728 val 4.8470
+[gradnorm] step   300 examples    38528 val 4.0516
+[gradnorm] step   400 examples    51328 val 3.2298
+[gradnorm] step   500 examples    64128 val 2.6259
+[gradnorm] step   600 examples    76928 val 2.4004
+[gradnorm] step   700 examples    89728 val 2.1649
+[gradnorm] step   800 examples   102528 val 1.9620
+[gradnorm] step   900 examples   115328 val 1.8718
+[gradnorm] step  1000 examples   128128 val 1.7409
+[gradnorm] step  1100 examples   140928 val 1.7416
+[gradnorm] step  1200 examples   153728 val 1.5271
+[gradnorm] step  1300 examples   166528 val 1.4416
+[gradnorm] step  1400 examples   179328 val 1.3716
+[gradnorm] step  1500 examples   192128 val 1.3412
+[gradnorm] step  1600 examples   204928 val 1.2713
+[gradnorm] step  1700 examples   217728 val 1.1983
+[gradnorm] step  1800 examples   230528 val 1.2172
+[gradnorm] step  1900 examples   243328 val 1.1075
+[gradnorm] step  2000 examples   256128 val 1.0634
+[gradnorm] step  2100 examples   268928 val 1.0239
+[gradnorm] step  2200 examples   281728 val 1.0028
+[gradnorm] step  2300 examples   294528 val 1.0136
+[gradnorm] step  2400 examples   307328 val 0.9161
+[gradnorm] step  2500 examples   320128 val 0.8914
+[gradnorm] step  2600 examples   332928 val 0.9243
+[gradnorm] step  2700 examples   345728 val 0.8419
+[gradnorm] step  2800 examples   358528 val 0.8039
+[gradnorm] step  2900 examples   371328 val 0.7526
+[gradnorm] step  3000 examples   384128 val 0.7078
+[gradnorm] step  3100 examples   396928 val 0.7256
+[gradnorm] step  3200 examples   409728 val 0.6731
+[gradnorm] step  3300 examples   422528 val 0.7518
+[gradnorm] step  3400 examples   435328 val 0.6309
+[gradnorm] step  3500 examples   448128 val 0.6685
+[gradnorm] step  3600 examples   460928 val 0.5846
+[gradnorm] step  3700 examples   473728 val 0.6046
+[gradnorm] step  3800 examples   486528 val 0.6029
+[gradnorm] step  3900 examples   499328 val 0.4950
+[gradnorm] step  4000 examples   512128 val 0.5664
+[gradnorm] step  4100 examples   524928 val 0.5593
+[gradnorm] step  4200 examples   537728 val 0.5376
+[gradnorm] step  4300 examples   550528 val 0.5114
+[gradnorm] step  4400 examples   563328 val 0.4975
+[gradnorm] step  4500 examples   576128 val 0.4483
+[gradnorm] step  4600 examples   588928 val 0.5330
+[gradnorm] step  4700 examples   601728 val 0.4675
+[gradnorm] step  4800 examples   614528 val 0.4758
+[gradnorm] step  4900 examples   627328 val 0.4572
+[gradnorm] step  5000 examples   640128 val 0.4530
+[gradnorm] step  5100 examples   652928 val 0.3976
+[gradnorm] step  5200 examples   665728 val 0.3978
+[gradnorm] step  5300 examples   678528 val 0.3905
+[gradnorm] step  5400 examples   691328 val 0.3538
+[gradnorm] step  5500 examples   704128 val 0.3709
+[gradnorm] step  5600 examples   716928 val 0.3845
+[gradnorm] step  5700 examples   729728 val 0.3944
+[gradnorm] step  5800 examples   742528 val 0.4019
+[gradnorm] step  5900 examples   755328 val 0.3718
+[gradnorm] step  6000 examples   768128 val 0.3862
+[gradnorm] step  6100 examples   780928 val 0.3536
+[gradnorm] step  6200 examples   793728 val 0.3803
+[gradnorm] step  6300 examples   806528 val 0.3954
+[gradnorm] step  6400 examples   819328 val 0.3611
+[gradnorm] step  6500 examples   832128 val 0.2996
+[gradnorm] step  6600 examples   844928 val 0.3754
+[gradnorm] step  6700 examples   857728 val 0.3068
+[gradnorm] step  6800 examples   870528 val 0.3791
+[gradnorm] step  6900 examples   883328 val 0.3839
+[gradnorm] step  7000 examples   896128 val 0.3207
+[gradnorm] step  7100 examples   908928 val 0.3741
+[gradnorm] step  7200 examples   921728 val 0.3470
+[gradnorm] step  7300 examples   934528 val 0.3852
+[gradnorm] step  7400 examples   947328 val 0.4132
+[gradnorm] step  7500 examples   960128 val 0.3723
+[gradnorm] step  7600 examples   972928 val 0.3263
+[gradnorm] step  7700 examples   985728 val 0.3786
+[gradnorm] step  7800 examples   998528 val 0.3468
+[gradnorm] step  7900 examples  1011328 val 0.3370
+[gradnorm] step  8000 examples  1024128 val 0.3324
+[gradnorm] step  8100 examples  1036928 val 0.3278
+[gradnorm] step  8200 examples  1049728 val 0.3248
+[gradnorm] step  8300 examples  1062528 val 0.3243
+[gradnorm] step  8400 examples  1075328 val 0.3313
+[gradnorm] step  8500 examples  1088128 val 0.3198
+[gradnorm] step  8600 examples  1100928 val 0.2840
+[gradnorm] step  8700 examples  1113728 val 0.3748
+[gradnorm] step  8800 examples  1126528 val 0.3150
+[gradnorm] step  8900 examples  1139328 val 0.3166
+[gradnorm] step  8999 examples  1152000 val 0.3295
+[learned ] step     0 examples      128 val 3.3428 [meta]
+[learned ] step   100 examples    12928 val 5.5391 [frozen]
+[learned ] step   200 examples    25728 val 5.0101 [frozen]
+[learned ] step   300 examples    38528 val 4.2112 [frozen]
+[learned ] step   400 examples    51328 val 3.3324 [frozen]
+[learned ] step   500 examples    64128 val 2.8108 [frozen]
+[learned ] step   600 examples    76928 val 2.5515 [frozen]
+[learned ] step   700 examples    89728 val 2.2896 [frozen]
+[learned ] step   800 examples   102528 val 2.1135 [frozen]
+[learned ] step   900 examples   115328 val 1.9997 [frozen]
+[learned ] step  1000 examples   128128 val 1.9116 [meta]
+[learned ] step  1100 examples   140928 val 1.9258 [frozen]
+[learned ] step  1200 examples   153728 val 1.7082 [frozen]
+[learned ] step  1300 examples   166528 val 1.5310 [frozen]
+[learned ] step  1400 examples   179328 val 1.4869 [frozen]
+[learned ] step  1500 examples   192128 val 1.4352 [frozen]
+[learned ] step  1600 examples   204928 val 1.3061 [frozen]
+[learned ] step  1700 examples   217728 val 1.4464 [frozen]
+[learned ] step  1800 examples   230528 val 1.2986 [frozen]
+[learned ] step  1900 examples   243328 val 1.1823 [frozen]
+[learned ] step  2000 examples   256128 val 1.1496 [meta]
+[learned ] step  2100 examples   268928 val 1.1775 [frozen]
+[learned ] step  2200 examples   281728 val 1.0072 [frozen]
+[learned ] step  2300 examples   294528 val 1.0387 [frozen]
+[learned ] step  2400 examples   307328 val 1.0227 [frozen]
+[learned ] step  2500 examples   320128 val 0.9377 [frozen]
+[learned ] step  2600 examples   332928 val 0.9745 [frozen]
+[learned ] step  2700 examples   345728 val 0.9106 [frozen]
+[learned ] step  2800 examples   358528 val 0.8510 [frozen]
+[learned ] step  2900 examples   371328 val 0.8329 [frozen]
+[learned ] step  3000 examples   384128 val 0.7655 [meta]
+[learned ] step  3100 examples   396928 val 0.8039 [frozen]
+[learned ] step  3200 examples   409728 val 0.7908 [frozen]
+[learned ] step  3300 examples   422528 val 0.7249 [frozen]
+[learned ] step  3400 examples   435328 val 0.6468 [frozen]
+[learned ] step  3500 examples   448128 val 0.6620 [frozen]
+[learned ] step  3600 examples   460928 val 0.5633 [frozen]
+[learned ] step  3700 examples   473728 val 0.5926 [frozen]
+[learned ] step  3800 examples   486528 val 0.6401 [frozen]
+[learned ] step  3900 examples   499328 val 0.7235 [frozen]
+[learned ] step  4000 examples   512128 val 0.6170 [meta]
+[learned ] step  4100 examples   524928 val 0.5746 [frozen]
+[learned ] step  4200 examples   537728 val 0.5862 [frozen]
+[learned ] step  4300 examples   550528 val 0.5506 [frozen]
+[learned ] step  4400 examples   563328 val 0.5155 [frozen]
+[learned ] step  4500 examples   576128 val 0.5160 [frozen]
+[learned ] step  4600 examples   588928 val 0.5088 [frozen]
+[learned ] step  4700 examples   601728 val 0.4903 [frozen]
+[learned ] step  4800 examples   614528 val 0.4564 [frozen]
+[learned ] step  4900 examples   627328 val 0.4707 [frozen]
+[learned ] step  5000 examples   640128 val 0.5608 [meta]
+[learned ] step  5100 examples   652928 val 0.5467 [frozen]
+[learned ] step  5200 examples   665728 val 0.4667 [frozen]
+[learned ] step  5300 examples   678528 val 0.4334 [frozen]
+[learned ] step  5400 examples   691328 val 0.4539 [frozen]
+[learned ] step  5500 examples   704128 val 0.4644 [frozen]
+[learned ] step  5600 examples   716928 val 0.4154 [frozen]
+[learned ] step  5700 examples   729728 val 0.4466 [frozen]
+[learned ] step  5800 examples   742528 val 0.4221 [frozen]
+[learned ] step  5900 examples   755328 val 0.4219 [frozen]
+[learned ] step  6000 examples   768128 val 0.3974 [meta]
+[learned ] step  6100 examples   780928 val 0.4292 [frozen]
+[learned ] step  6200 examples   793728 val 0.3972 [frozen]
+[learned ] step  6300 examples   806528 val 0.4018 [frozen]
+[learned ] step  6400 examples   819328 val 0.3813 [frozen]
+[learned ] step  6500 examples   832128 val 0.4007 [frozen]
+[learned ] step  6600 examples   844928 val 0.4196 [frozen]
+[learned ] step  6700 examples   857728 val 0.3800 [frozen]
+[learned ] step  6800 examples   870528 val 0.3945 [frozen]
+[learned ] step  6900 examples   883328 val 0.2580 [frozen]
+[learned ] step  7000 examples   896128 val 0.3486 [meta]
+[learned ] step  7100 examples   908928 val 0.4312 [frozen]
+[learned ] step  7200 examples   921728 val 0.3866 [frozen]
+[learned ] step  7300 examples   934528 val 0.4250 [frozen]
+[learned ] step  7400 examples   947328 val 0.3772 [frozen]
+[learned ] step  7500 examples   960128 val 0.4227 [frozen]
+[learned ] step  7600 examples   972928 val 0.3474 [frozen]
+[learned ] step  7700 examples   985728 val 0.3776 [frozen]
+[learned ] step  7800 examples   998528 val 0.3441 [frozen]
+[learned ] step  7900 examples  1011328 val 0.3773 [frozen]
+[learned ] step  8000 examples  1024128 val 0.3639 [meta]
+[learned ] step  8100 examples  1036928 val 0.4445 [frozen]
+[learned ] step  8200 examples  1049728 val 0.3788 [frozen]
+[learned ] step  8300 examples  1062528 val 0.3098 [frozen]
+[learned ] step  8400 examples  1075328 val 0.3934 [frozen]
+[learned ] step  8500 examples  1088128 val 0.3360 [frozen]
+[learned ] step  8600 examples  1100928 val 0.3912 [frozen]
+[learned ] step  8700 examples  1113728 val 0.4234 [frozen]
+[learned ] step  8800 examples  1126528 val 0.3003 [frozen]
+[learned ] step  8900 examples  1139328 val 0.3207 [frozen]
+[learned ] step  8999 examples  1152000 val 0.3946 [frozen]
+==== seed 3 ====
+[uniform] step     0 examples        0 val 3.3426
+[uniform] step   100 examples    12800 val 5.2566
+[uniform] step   200 examples    25600 val 5.0218
+[uniform] step   300 examples    38400 val 4.3441
+[uniform] step   400 examples    51200 val 3.6821
+[uniform] step   500 examples    64000 val 3.1349
+[uniform] step   600 examples    76800 val 2.9737
+[uniform] step   700 examples    89600 val 2.7622
+[uniform] step   800 examples   102400 val 2.6382
+[uniform] step   900 examples   115200 val 2.5275
+[uniform] step  1000 examples   128000 val 2.2725
+[uniform] step  1100 examples   140800 val 2.2036
+[uniform] step  1200 examples   153600 val 2.1461
+[uniform] step  1300 examples   166400 val 2.1255
+[uniform] step  1400 examples   179200 val 2.0431
+[uniform] step  1500 examples   192000 val 1.9925
+[uniform] step  1600 examples   204800 val 1.9348
+[uniform] step  1700 examples   217600 val 1.9299
+[uniform] step  1800 examples   230400 val 1.9602
+[uniform] step  1900 examples   243200 val 1.8520
+[uniform] step  2000 examples   256000 val 1.7994
+[uniform] step  2100 examples   268800 val 1.7557
+[uniform] step  2200 examples   281600 val 1.7221
+[uniform] step  2300 examples   294400 val 1.6822
+[uniform] step  2400 examples   307200 val 1.6751
+[uniform] step  2500 examples   320000 val 1.6207
+[uniform] step  2600 examples   332800 val 1.6013
+[uniform] step  2700 examples   345600 val 1.5795
+[uniform] step  2800 examples   358400 val 1.4999
+[uniform] step  2900 examples   371200 val 1.4660
+[uniform] step  3000 examples   384000 val 1.4661
+[uniform] step  3100 examples   396800 val 1.4368
+[uniform] step  3200 examples   409600 val 1.3924
+[uniform] step  3300 examples   422400 val 1.3737
+[uniform] step  3400 examples   435200 val 1.3702
+[uniform] step  3500 examples   448000 val 1.3646
+[uniform] step  3600 examples   460800 val 1.2881
+[uniform] step  3700 examples   473600 val 1.2562
+[uniform] step  3800 examples   486400 val 1.2615
+[uniform] step  3900 examples   499200 val 1.1947
+[uniform] step  4000 examples   512000 val 1.1832
+[uniform] step  4100 examples   524800 val 1.2380
+[uniform] step  4200 examples   537600 val 1.1805
+[uniform] step  4300 examples   550400 val 1.1211
+[uniform] step  4400 examples   563200 val 1.1175
+[uniform] step  4500 examples   576000 val 1.0996
+[uniform] step  4600 examples   588800 val 1.0577
+[uniform] step  4700 examples   601600 val 1.0368
+[uniform] step  4800 examples   614400 val 1.0012
+[uniform] step  4900 examples   627200 val 1.0453
+[uniform] step  5000 examples   640000 val 1.0180
+[uniform] step  5100 examples   652800 val 0.9596
+[uniform] step  5200 examples   665600 val 0.9216
+[uniform] step  5300 examples   678400 val 0.8688
+[uniform] step  5400 examples   691200 val 0.8454
+[uniform] step  5500 examples   704000 val 0.8260
+[uniform] step  5600 examples   716800 val 0.8040
+[uniform] step  5700 examples   729600 val 0.8142
+[uniform] step  5800 examples   742400 val 0.8069
+[uniform] step  5900 examples   755200 val 0.7949
+[uniform] step  6000 examples   768000 val 0.8029
+[uniform] step  6100 examples   780800 val 0.7740
+[uniform] step  6200 examples   793600 val 0.7549
+[uniform] step  6300 examples   806400 val 0.7067
+[uniform] step  6400 examples   819200 val 0.7479
+[uniform] step  6500 examples   832000 val 0.7221
+[uniform] step  6600 examples   844800 val 0.6986
+[uniform] step  6700 examples   857600 val 0.6737
+[uniform] step  6800 examples   870400 val 0.6540
+[uniform] step  6900 examples   883200 val 0.6533
+[uniform] step  7000 examples   896000 val 0.6035
+[uniform] step  7100 examples   908800 val 0.6167
+[uniform] step  7200 examples   921600 val 0.6220
+[uniform] step  7300 examples   934400 val 0.5859
+[uniform] step  7400 examples   947200 val 0.6102
+[uniform] step  7500 examples   960000 val 0.5835
+[uniform] step  7600 examples   972800 val 0.5839
+[uniform] step  7700 examples   985600 val 0.6253
+[uniform] step  7800 examples   998400 val 0.6064
+[uniform] step  7900 examples  1011200 val 0.5453
+[uniform] step  8000 examples  1024000 val 0.5828
+[uniform] step  8100 examples  1036800 val 0.5393
+[uniform] step  8200 examples  1049600 val 0.5376
+[uniform] step  8300 examples  1062400 val 0.5305
+[uniform] step  8400 examples  1075200 val 0.5055
+[uniform] step  8500 examples  1088000 val 0.5099
+[uniform] step  8600 examples  1100800 val 0.5142
+[uniform] step  8700 examples  1113600 val 0.5137
+[uniform] step  8800 examples  1126400 val 0.4912
+[uniform] step  8900 examples  1139200 val 0.4895
+[uniform] step  8999 examples  1151872 val 0.4794
+[gradnorm] step     0 examples      128 val 3.3287
+[gradnorm] step   100 examples    12928 val 5.3528
+[gradnorm] step   200 examples    25728 val 5.0129
+[gradnorm] step   300 examples    38528 val 4.2088
+[gradnorm] step   400 examples    51328 val 3.4015
+[gradnorm] step   500 examples    64128 val 2.8854
+[gradnorm] step   600 examples    76928 val 2.6151
+[gradnorm] step   700 examples    89728 val 2.4828
+[gradnorm] step   800 examples   102528 val 2.3815
+[gradnorm] step   900 examples   115328 val 2.3012
+[gradnorm] step  1000 examples   128128 val 2.2256
+[gradnorm] step  1100 examples   140928 val 2.0934
+[gradnorm] step  1200 examples   153728 val 2.0556
+[gradnorm] step  1300 examples   166528 val 1.9417
+[gradnorm] step  1400 examples   179328 val 1.8661
+[gradnorm] step  1500 examples   192128 val 1.8255
+[gradnorm] step  1600 examples   204928 val 1.7979
+[gradnorm] step  1700 examples   217728 val 1.8022
+[gradnorm] step  1800 examples   230528 val 1.6858
+[gradnorm] step  1900 examples   243328 val 1.7175
+[gradnorm] step  2000 examples   256128 val 1.5921
+[gradnorm] step  2100 examples   268928 val 1.5035
+[gradnorm] step  2200 examples   281728 val 1.4392
+[gradnorm] step  2300 examples   294528 val 1.3872
+[gradnorm] step  2400 examples   307328 val 1.3532
+[gradnorm] step  2500 examples   320128 val 1.3343
+[gradnorm] step  2600 examples   332928 val 1.2345
+[gradnorm] step  2700 examples   345728 val 1.2468
+[gradnorm] step  2800 examples   358528 val 1.2378
+[gradnorm] step  2900 examples   371328 val 1.1194
+[gradnorm] step  3000 examples   384128 val 0.9964
+[gradnorm] step  3100 examples   396928 val 0.9403
+[gradnorm] step  3200 examples   409728 val 0.9354
+[gradnorm] step  3300 examples   422528 val 0.8564
+[gradnorm] step  3400 examples   435328 val 0.9231
+[gradnorm] step  3500 examples   448128 val 0.8781
+[gradnorm] step  3600 examples   460928 val 0.8809
+[gradnorm] step  3700 examples   473728 val 0.8310
+[gradnorm] step  3800 examples   486528 val 0.7535
+[gradnorm] step  3900 examples   499328 val 0.7256
+[gradnorm] step  4000 examples   512128 val 0.6571
+[gradnorm] step  4100 examples   524928 val 0.7044
+[gradnorm] step  4200 examples   537728 val 0.6294
+[gradnorm] step  4300 examples   550528 val 0.6676
+[gradnorm] step  4400 examples   563328 val 0.6419
+[gradnorm] step  4500 examples   576128 val 0.5901
+[gradnorm] step  4600 examples   588928 val 0.5881
+[gradnorm] step  4700 examples   601728 val 0.5762
+[gradnorm] step  4800 examples   614528 val 0.5542
+[gradnorm] step  4900 examples   627328 val 0.5090
+[gradnorm] step  5000 examples   640128 val 0.5196
+[gradnorm] step  5100 examples   652928 val 0.5265
+[gradnorm] step  5200 examples   665728 val 0.5066
+[gradnorm] step  5300 examples   678528 val 0.5089
+[gradnorm] step  5400 examples   691328 val 0.4999
+[gradnorm] step  5500 examples   704128 val 0.5177
+[gradnorm] step  5600 examples   716928 val 0.4749
+[gradnorm] step  5700 examples   729728 val 0.4831
+[gradnorm] step  5800 examples   742528 val 0.4240
+[gradnorm] step  5900 examples   755328 val 0.4259
+[gradnorm] step  6000 examples   768128 val 0.4895
+[gradnorm] step  6100 examples   780928 val 0.4816
+[gradnorm] step  6200 examples   793728 val 0.4313
+[gradnorm] step  6300 examples   806528 val 0.4190
+[gradnorm] step  6400 examples   819328 val 0.4054
+[gradnorm] step  6500 examples   832128 val 0.3571
+[gradnorm] step  6600 examples   844928 val 0.4378
+[gradnorm] step  6700 examples   857728 val 0.3763
+[gradnorm] step  6800 examples   870528 val 0.4159
+[gradnorm] step  6900 examples   883328 val 0.4696
+[gradnorm] step  7000 examples   896128 val 0.4075
+[gradnorm] step  7100 examples   908928 val 0.3832
+[gradnorm] step  7200 examples   921728 val 0.4122
+[gradnorm] step  7300 examples   934528 val 0.2851
+[gradnorm] step  7400 examples   947328 val 0.3530
+[gradnorm] step  7500 examples   960128 val 0.3847
+[gradnorm] step  7600 examples   972928 val 0.3727
+[gradnorm] step  7700 examples   985728 val 0.3472
+[gradnorm] step  7800 examples   998528 val 0.3418
+[gradnorm] step  7900 examples  1011328 val 0.3635
+[gradnorm] step  8000 examples  1024128 val 0.3857
+[gradnorm] step  8100 examples  1036928 val 0.3045
+[gradnorm] step  8200 examples  1049728 val 0.3639
+[gradnorm] step  8300 examples  1062528 val 0.3328
+[gradnorm] step  8400 examples  1075328 val 0.3665
+[gradnorm] step  8500 examples  1088128 val 0.3435
+[gradnorm] step  8600 examples  1100928 val 0.3335
+[gradnorm] step  8700 examples  1113728 val 0.3130
+[gradnorm] step  8800 examples  1126528 val 0.3620
+[gradnorm] step  8900 examples  1139328 val 0.4389
+[gradnorm] step  8999 examples  1152000 val 0.3437
+[learned ] step     0 examples      128 val 3.3357 [meta]
+[learned ] step   100 examples    12928 val 5.4149 [frozen]
+[learned ] step   200 examples    25728 val 5.0605 [frozen]
+[learned ] step   300 examples    38528 val 4.2710 [frozen]
+[learned ] step   400 examples    51328 val 3.5850 [frozen]
+[learned ] step   500 examples    64128 val 3.0119 [frozen]
+[learned ] step   600 examples    76928 val 2.7670 [frozen]
+[learned ] step   700 examples    89728 val 2.6440 [frozen]
+[learned ] step   800 examples   102528 val 2.4737 [frozen]
+[learned ] step   900 examples   115328 val 2.4378 [frozen]
+[learned ] step  1000 examples   128128 val 2.3522 [meta]
+[learned ] step  1100 examples   140928 val 2.2197 [frozen]
+[learned ] step  1200 examples   153728 val 2.0936 [frozen]
+[learned ] step  1300 examples   166528 val 1.9971 [frozen]
+[learned ] step  1400 examples   179328 val 1.9224 [frozen]
+[learned ] step  1500 examples   192128 val 1.8864 [frozen]
+[learned ] step  1600 examples   204928 val 1.8558 [frozen]
+[learned ] step  1700 examples   217728 val 1.8174 [frozen]
+[learned ] step  1800 examples   230528 val 2.0614 [frozen]
+[learned ] step  1900 examples   243328 val 1.6823 [frozen]
+[learned ] step  2000 examples   256128 val 1.6528 [meta]
+[learned ] step  2100 examples   268928 val 1.6379 [frozen]
+[learned ] step  2200 examples   281728 val 1.5581 [frozen]
+[learned ] step  2300 examples   294528 val 1.5045 [frozen]
+[learned ] step  2400 examples   307328 val 1.4887 [frozen]
+[learned ] step  2500 examples   320128 val 1.4386 [frozen]
+[learned ] step  2600 examples   332928 val 1.3267 [frozen]
+[learned ] step  2700 examples   345728 val 1.4905 [frozen]
+[learned ] step  2800 examples   358528 val 1.3981 [frozen]
+[learned ] step  2900 examples   371328 val 1.1687 [frozen]
+[learned ] step  3000 examples   384128 val 1.0580 [meta]
+[learned ] step  3100 examples   396928 val 0.9856 [frozen]
+[learned ] step  3200 examples   409728 val 0.9585 [frozen]
+[learned ] step  3300 examples   422528 val 0.9478 [frozen]
+[learned ] step  3400 examples   435328 val 0.9323 [frozen]
+[learned ] step  3500 examples   448128 val 0.8826 [frozen]
+[learned ] step  3600 examples   460928 val 0.9188 [frozen]
+[learned ] step  3700 examples   473728 val 0.8273 [frozen]
+[learned ] step  3800 examples   486528 val 0.7961 [frozen]
+[learned ] step  3900 examples   499328 val 0.7408 [frozen]
+[learned ] step  4000 examples   512128 val 0.8020 [meta]
+[learned ] step  4100 examples   524928 val 0.7264 [frozen]
+[learned ] step  4200 examples   537728 val 0.7045 [frozen]
+[learned ] step  4300 examples   550528 val 0.7176 [frozen]
+[learned ] step  4400 examples   563328 val 0.6427 [frozen]
+[learned ] step  4500 examples   576128 val 0.6402 [frozen]
+[learned ] step  4600 examples   588928 val 0.6260 [frozen]
+[learned ] step  4700 examples   601728 val 0.6418 [frozen]
+[learned ] step  4800 examples   614528 val 0.5611 [frozen]
+[learned ] step  4900 examples   627328 val 0.5321 [frozen]
+[learned ] step  5000 examples   640128 val 0.5907 [meta]
+[learned ] step  5100 examples   652928 val 0.5190 [frozen]
+[learned ] step  5200 examples   665728 val 0.5176 [frozen]
+[learned ] step  5300 examples   678528 val 0.4999 [frozen]
+[learned ] step  5400 examples   691328 val 0.5151 [frozen]
+[learned ] step  5500 examples   704128 val 0.4780 [frozen]
+[learned ] step  5600 examples   716928 val 0.5184 [frozen]
+[learned ] step  5700 examples   729728 val 0.5045 [frozen]
+[learned ] step  5800 examples   742528 val 0.4387 [frozen]
+[learned ] step  5900 examples   755328 val 0.4630 [frozen]
+[learned ] step  6000 examples   768128 val 0.4302 [meta]
+[learned ] step  6100 examples   780928 val 0.4587 [frozen]
+[learned ] step  6200 examples   793728 val 0.4882 [frozen]
+[learned ] step  6300 examples   806528 val 0.4500 [frozen]
+[learned ] step  6400 examples   819328 val 0.4354 [frozen]
+[learned ] step  6500 examples   832128 val 0.3935 [frozen]
+[learned ] step  6600 examples   844928 val 0.4003 [frozen]
+[learned ] step  6700 examples   857728 val 0.3855 [frozen]
+[learned ] step  6800 examples   870528 val 0.4247 [frozen]
+[learned ] step  6900 examples   883328 val 0.4247 [frozen]
+[learned ] step  7000 examples   896128 val 0.4707 [meta]
+[learned ] step  7100 examples   908928 val 0.3655 [frozen]
+[learned ] step  7200 examples   921728 val 0.3565 [frozen]
+[learned ] step  7300 examples   934528 val 0.3965 [frozen]
+[learned ] step  7400 examples   947328 val 0.3807 [frozen]
+[learned ] step  7500 examples   960128 val 0.4002 [frozen]
+[learned ] step  7600 examples   972928 val 0.3891 [frozen]
+[learned ] step  7700 examples   985728 val 0.3889 [frozen]
+[learned ] step  7800 examples   998528 val 0.4100 [frozen]
+[learned ] step  7900 examples  1011328 val 0.3480 [frozen]
+[learned ] step  8000 examples  1024128 val 0.3593 [meta]
+[learned ] step  8100 examples  1036928 val 0.3609 [frozen]
+[learned ] step  8200 examples  1049728 val 0.3489 [frozen]
+[learned ] step  8300 examples  1062528 val 0.3687 [frozen]
+[learned ] step  8400 examples  1075328 val 0.3820 [frozen]
+[learned ] step  8500 examples  1088128 val 0.4170 [frozen]
+[learned ] step  8600 examples  1100928 val 0.3791 [frozen]
+[learned ] step  8700 examples  1113728 val 0.3390 [frozen]
+[learned ] step  8800 examples  1126528 val 0.3882 [frozen]
+[learned ] step  8900 examples  1139328 val 0.3595 [frozen]
+[learned ] step  8999 examples  1152000 val 0.3354 [frozen]
+==== seed 4 ====
+[uniform] step     0 examples        0 val 3.3193
+[uniform] step   100 examples    12800 val 5.5845
+[uniform] step   200 examples    25600 val 5.4012
+[uniform] step   300 examples    38400 val 4.8117
+[uniform] step   400 examples    51200 val 4.0476
+[uniform] step   500 examples    64000 val 3.6226
+[uniform] step   600 examples    76800 val 3.3894
+[uniform] step   700 examples    89600 val 3.0985
+[uniform] step   800 examples   102400 val 2.7474
+[uniform] step   900 examples   115200 val 2.6578
+[uniform] step  1000 examples   128000 val 2.6458
+[uniform] step  1100 examples   140800 val 2.4455
+[uniform] step  1200 examples   153600 val 2.2773
+[uniform] step  1300 examples   166400 val 2.2191
+[uniform] step  1400 examples   179200 val 2.1588
+[uniform] step  1500 examples   192000 val 2.1699
+[uniform] step  1600 examples   204800 val 2.1022
+[uniform] step  1700 examples   217600 val 2.0704
+[uniform] step  1800 examples   230400 val 2.0295
+[uniform] step  1900 examples   243200 val 1.9594
+[uniform] step  2000 examples   256000 val 1.9493
+[uniform] step  2100 examples   268800 val 1.9989
+[uniform] step  2200 examples   281600 val 1.9411
+[uniform] step  2300 examples   294400 val 1.8983
+[uniform] step  2400 examples   307200 val 1.8750
+[uniform] step  2500 examples   320000 val 1.8955
+[uniform] step  2600 examples   332800 val 1.8334
+[uniform] step  2700 examples   345600 val 1.8258
+[uniform] step  2800 examples   358400 val 1.8170
+[uniform] step  2900 examples   371200 val 1.7962
+[uniform] step  3000 examples   384000 val 1.7567
+[uniform] step  3100 examples   396800 val 1.7358
+[uniform] step  3200 examples   409600 val 1.7084
+[uniform] step  3300 examples   422400 val 1.6899
+[uniform] step  3400 examples   435200 val 1.6880
+[uniform] step  3500 examples   448000 val 1.6878
+[uniform] step  3600 examples   460800 val 1.6645
+[uniform] step  3700 examples   473600 val 1.5672
+[uniform] step  3800 examples   486400 val 1.4999
+[uniform] step  3900 examples   499200 val 1.5365
+[uniform] step  4000 examples   512000 val 1.5367
+[uniform] step  4100 examples   524800 val 1.4939
+[uniform] step  4200 examples   537600 val 1.5287
+[uniform] step  4300 examples   550400 val 1.5028
+[uniform] step  4400 examples   563200 val 1.4851
+[uniform] step  4500 examples   576000 val 1.5387
+[uniform] step  4600 examples   588800 val 1.4999
+[uniform] step  4700 examples   601600 val 1.4564
+[uniform] step  4800 examples   614400 val 1.3458
+[uniform] step  4900 examples   627200 val 1.3795
+[uniform] step  5000 examples   640000 val 1.3509
+[uniform] step  5100 examples   652800 val 1.2893
+[uniform] step  5200 examples   665600 val 1.3144
+[uniform] step  5300 examples   678400 val 1.2708
+[uniform] step  5400 examples   691200 val 1.2424
+[uniform] step  5500 examples   704000 val 1.1759
+[uniform] step  5600 examples   716800 val 1.1865
+[uniform] step  5700 examples   729600 val 1.1370
+[uniform] step  5800 examples   742400 val 1.1591
+[uniform] step  5900 examples   755200 val 1.1396
+[uniform] step  6000 examples   768000 val 1.1256
+[uniform] step  6100 examples   780800 val 1.0820
+[uniform] step  6200 examples   793600 val 1.0935
+[uniform] step  6300 examples   806400 val 1.0776
+[uniform] step  6400 examples   819200 val 1.0684
+[uniform] step  6500 examples   832000 val 1.0725
+[uniform] step  6600 examples   844800 val 1.0781
+[uniform] step  6700 examples   857600 val 0.9968
+[uniform] step  6800 examples   870400 val 0.9773
+[uniform] step  6900 examples   883200 val 0.9741
+[uniform] step  7000 examples   896000 val 0.9828
+[uniform] step  7100 examples   908800 val 0.9516
+[uniform] step  7200 examples   921600 val 0.9247
+[uniform] step  7300 examples   934400 val 0.8781
+[uniform] step  7400 examples   947200 val 0.8740
+[uniform] step  7500 examples   960000 val 0.8008
+[uniform] step  7600 examples   972800 val 0.8605
+[uniform] step  7700 examples   985600 val 0.8135
+[uniform] step  7800 examples   998400 val 0.8119
+[uniform] step  7900 examples  1011200 val 0.8259
+[uniform] step  8000 examples  1024000 val 0.8077
+[uniform] step  8100 examples  1036800 val 0.8092
+[uniform] step  8200 examples  1049600 val 0.8029
+[uniform] step  8300 examples  1062400 val 0.7862
+[uniform] step  8400 examples  1075200 val 0.8113
+[uniform] step  8500 examples  1088000 val 0.7554
+[uniform] step  8600 examples  1100800 val 0.7855
+[uniform] step  8700 examples  1113600 val 0.7650
+[uniform] step  8800 examples  1126400 val 0.6938
+[uniform] step  8900 examples  1139200 val 0.7136
+[uniform] step  8999 examples  1151872 val 0.7318
+[gradnorm] step     0 examples      128 val 3.3233
+[gradnorm] step   100 examples    12928 val 5.6955
+[gradnorm] step   200 examples    25728 val 5.4310
+[gradnorm] step   300 examples    38528 val 4.6030
+[gradnorm] step   400 examples    51328 val 3.8778
+[gradnorm] step   500 examples    64128 val 3.4299
+[gradnorm] step   600 examples    76928 val 3.0632
+[gradnorm] step   700 examples    89728 val 2.7021
+[gradnorm] step   800 examples   102528 val 2.4729
+[gradnorm] step   900 examples   115328 val 2.3957
+[gradnorm] step  1000 examples   128128 val 2.2924
+[gradnorm] step  1100 examples   140928 val 2.2444
+[gradnorm] step  1200 examples   153728 val 2.1932
+[gradnorm] step  1300 examples   166528 val 2.2076
+[gradnorm] step  1400 examples   179328 val 2.0414
+[gradnorm] step  1500 examples   192128 val 1.9217
+[gradnorm] step  1600 examples   204928 val 1.9344
+[gradnorm] step  1700 examples   217728 val 1.9053
+[gradnorm] step  1800 examples   230528 val 1.9758
+[gradnorm] step  1900 examples   243328 val 1.8453
+[gradnorm] step  2000 examples   256128 val 1.8162
+[gradnorm] step  2100 examples   268928 val 1.7670
+[gradnorm] step  2200 examples   281728 val 1.7043
+[gradnorm] step  2300 examples   294528 val 1.8741
+[gradnorm] step  2400 examples   307328 val 1.7067
+[gradnorm] step  2500 examples   320128 val 1.6641
+[gradnorm] step  2600 examples   332928 val 1.6242
+[gradnorm] step  2700 examples   345728 val 1.6636
+[gradnorm] step  2800 examples   358528 val 1.5310
+[gradnorm] step  2900 examples   371328 val 1.5164
+[gradnorm] step  3000 examples   384128 val 1.4452
+[gradnorm] step  3100 examples   396928 val 1.3795
+[gradnorm] step  3200 examples   409728 val 1.3926
+[gradnorm] step  3300 examples   422528 val 1.3738
+[gradnorm] step  3400 examples   435328 val 1.3826
+[gradnorm] step  3500 examples   448128 val 1.2167
+[gradnorm] step  3600 examples   460928 val 1.2180
+[gradnorm] step  3700 examples   473728 val 1.1231
+[gradnorm] step  3800 examples   486528 val 1.0431
+[gradnorm] step  3900 examples   499328 val 1.0676
+[gradnorm] step  4000 examples   512128 val 1.0712
+[gradnorm] step  4100 examples   524928 val 0.9986
+[gradnorm] step  4200 examples   537728 val 0.9622
+[gradnorm] step  4300 examples   550528 val 0.8920
+[gradnorm] step  4400 examples   563328 val 0.8454
+[gradnorm] step  4500 examples   576128 val 0.8126
+[gradnorm] step  4600 examples   588928 val 0.7512
+[gradnorm] step  4700 examples   601728 val 0.7977
+[gradnorm] step  4800 examples   614528 val 0.6943
+[gradnorm] step  4900 examples   627328 val 0.7203
+[gradnorm] step  5000 examples   640128 val 0.6147
+[gradnorm] step  5100 examples   652928 val 0.6124
+[gradnorm] step  5200 examples   665728 val 0.6525
+[gradnorm] step  5300 examples   678528 val 0.6607
+[gradnorm] step  5400 examples   691328 val 0.6945
+[gradnorm] step  5500 examples   704128 val 0.6375
+[gradnorm] step  5600 examples   716928 val 0.5885
+[gradnorm] step  5700 examples   729728 val 0.5189
+[gradnorm] step  5800 examples   742528 val 0.5452
+[gradnorm] step  5900 examples   755328 val 0.6154
+[gradnorm] step  6000 examples   768128 val 0.5456
+[gradnorm] step  6100 examples   780928 val 0.4730
+[gradnorm] step  6200 examples   793728 val 0.4715
+[gradnorm] step  6300 examples   806528 val 0.5013
+[gradnorm] step  6400 examples   819328 val 0.4799
+[gradnorm] step  6500 examples   832128 val 0.4588
+[gradnorm] step  6600 examples   844928 val 0.4723
+[gradnorm] step  6700 examples   857728 val 0.4966
+[gradnorm] step  6800 examples   870528 val 0.4872
+[gradnorm] step  6900 examples   883328 val 0.4843
+[gradnorm] step  7000 examples   896128 val 0.4735
+[gradnorm] step  7100 examples   908928 val 0.4948
+[gradnorm] step  7200 examples   921728 val 0.4932
+[gradnorm] step  7300 examples   934528 val 0.5466
+[gradnorm] step  7400 examples   947328 val 0.3856
+[gradnorm] step  7500 examples   960128 val 0.3401
+[gradnorm] step  7600 examples   972928 val 0.4908
+[gradnorm] step  7700 examples   985728 val 0.4200
+[gradnorm] step  7800 examples   998528 val 0.4604
+[gradnorm] step  7900 examples  1011328 val 0.4319
+[gradnorm] step  8000 examples  1024128 val 0.3797
+[gradnorm] step  8100 examples  1036928 val 0.4072
+[gradnorm] step  8200 examples  1049728 val 0.4134
+[gradnorm] step  8300 examples  1062528 val 0.4028
+[gradnorm] step  8400 examples  1075328 val 0.3344
+[gradnorm] step  8500 examples  1088128 val 0.3892
+[gradnorm] step  8600 examples  1100928 val 0.4312
+[gradnorm] step  8700 examples  1113728 val 0.3503
+[gradnorm] step  8800 examples  1126528 val 0.3457
+[gradnorm] step  8900 examples  1139328 val 0.4831
+[gradnorm] step  8999 examples  1152000 val 0.4327
+[learned ] step     0 examples      128 val 3.3226 [meta]
+[learned ] step   100 examples    12928 val 5.7438 [frozen]
+[learned ] step   200 examples    25728 val 5.4276 [frozen]
+[learned ] step   300 examples    38528 val 4.7470 [frozen]
+[learned ] step   400 examples    51328 val 4.1515 [frozen]
+[learned ] step   500 examples    64128 val 3.6508 [frozen]
+[learned ] step   600 examples    76928 val 3.2412 [frozen]
+[learned ] step   700 examples    89728 val 2.8741 [frozen]
+[learned ] step   800 examples   102528 val 2.6848 [frozen]
+[learned ] step   900 examples   115328 val 2.5337 [frozen]
+[learned ] step  1000 examples   128128 val 2.4401 [meta]
+[learned ] step  1100 examples   140928 val 2.3475 [frozen]
+[learned ] step  1200 examples   153728 val 2.3456 [frozen]
+[learned ] step  1300 examples   166528 val 2.2463 [frozen]
+[learned ] step  1400 examples   179328 val 2.2301 [frozen]
+[learned ] step  1500 examples   192128 val 2.0773 [frozen]
+[learned ] step  1600 examples   204928 val 2.1020 [frozen]
+[learned ] step  1700 examples   217728 val 2.0272 [frozen]
+[learned ] step  1800 examples   230528 val 2.0601 [frozen]
+[learned ] step  1900 examples   243328 val 1.9655 [frozen]
+[learned ] step  2000 examples   256128 val 1.8838 [meta]
+[learned ] step  2100 examples   268928 val 1.8567 [frozen]
+[learned ] step  2200 examples   281728 val 1.8545 [frozen]
+[learned ] step  2300 examples   294528 val 1.7830 [frozen]
+[learned ] step  2400 examples   307328 val 1.7180 [frozen]
+[learned ] step  2500 examples   320128 val 1.8747 [frozen]
+[learned ] step  2600 examples   332928 val 1.7620 [frozen]
+[learned ] step  2700 examples   345728 val 1.7840 [frozen]
+[learned ] step  2800 examples   358528 val 1.6078 [frozen]
+[learned ] step  2900 examples   371328 val 1.4449 [frozen]
+[learned ] step  3000 examples   384128 val 1.5453 [meta]
+[learned ] step  3100 examples   396928 val 1.5078 [frozen]
+[learned ] step  3200 examples   409728 val 1.4638 [frozen]
+[learned ] step  3300 examples   422528 val 1.5021 [frozen]
+[learned ] step  3400 examples   435328 val 1.3510 [frozen]
+[learned ] step  3500 examples   448128 val 1.2852 [frozen]
+[learned ] step  3600 examples   460928 val 1.2811 [frozen]
+[learned ] step  3700 examples   473728 val 1.2153 [frozen]
+[learned ] step  3800 examples   486528 val 1.1489 [frozen]
+[learned ] step  3900 examples   499328 val 1.1354 [frozen]
+[learned ] step  4000 examples   512128 val 1.1310 [meta]
+[learned ] step  4100 examples   524928 val 1.1005 [frozen]
+[learned ] step  4200 examples   537728 val 1.1267 [frozen]
+[learned ] step  4300 examples   550528 val 1.0327 [frozen]
+[learned ] step  4400 examples   563328 val 0.9746 [frozen]
+[learned ] step  4500 examples   576128 val 0.8885 [frozen]
+[learned ] step  4600 examples   588928 val 0.9262 [frozen]
+[learned ] step  4700 examples   601728 val 0.8924 [frozen]
+[learned ] step  4800 examples   614528 val 0.8195 [frozen]
+[learned ] step  4900 examples   627328 val 0.7564 [frozen]
+[learned ] step  5000 examples   640128 val 0.6129 [meta]
+[learned ] step  5100 examples   652928 val 0.6677 [frozen]
+[learned ] step  5200 examples   665728 val 0.6446 [frozen]
+[learned ] step  5300 examples   678528 val 0.6429 [frozen]
+[learned ] step  5400 examples   691328 val 0.6628 [frozen]
+[learned ] step  5500 examples   704128 val 0.6241 [frozen]
+[learned ] step  5600 examples   716928 val 0.5985 [frozen]
+[learned ] step  5700 examples   729728 val 0.5748 [frozen]
+[learned ] step  5800 examples   742528 val 0.5625 [frozen]
+[learned ] step  5900 examples   755328 val 0.5381 [frozen]
+[learned ] step  6000 examples   768128 val 0.4942 [meta]
+[learned ] step  6100 examples   780928 val 0.5190 [frozen]
+[learned ] step  6200 examples   793728 val 0.5110 [frozen]
+[learned ] step  6300 examples   806528 val 0.5477 [frozen]
+[learned ] step  6400 examples   819328 val 0.5063 [frozen]
+[learned ] step  6500 examples   832128 val 0.5162 [frozen]
+[learned ] step  6600 examples   844928 val 0.4730 [frozen]
+[learned ] step  6700 examples   857728 val 0.4776 [frozen]
+[learned ] step  6800 examples   870528 val 0.5193 [frozen]
+[learned ] step  6900 examples   883328 val 0.4897 [frozen]
+[learned ] step  7000 examples   896128 val 0.4039 [meta]
+[learned ] step  7100 examples   908928 val 0.4101 [frozen]
+[learned ] step  7200 examples   921728 val 0.4924 [frozen]
+[learned ] step  7300 examples   934528 val 0.4531 [frozen]
+[learned ] step  7400 examples   947328 val 0.3690 [frozen]
+[learned ] step  7500 examples   960128 val 0.3697 [frozen]
+[learned ] step  7600 examples   972928 val 0.4018 [frozen]
+[learned ] step  7700 examples   985728 val 0.4371 [frozen]
+[learned ] step  7800 examples   998528 val 0.3903 [frozen]
+[learned ] step  7900 examples  1011328 val 0.4014 [frozen]
+[learned ] step  8000 examples  1024128 val 0.3394 [meta]
+[learned ] step  8100 examples  1036928 val 0.3825 [frozen]
+[learned ] step  8200 examples  1049728 val 0.3701 [frozen]
+[learned ] step  8300 examples  1062528 val 0.3786 [frozen]
+[learned ] step  8400 examples  1075328 val 0.3511 [frozen]
+[learned ] step  8500 examples  1088128 val 0.4060 [frozen]
+[learned ] step  8600 examples  1100928 val 0.3963 [frozen]
+[learned ] step  8700 examples  1113728 val 0.3440 [frozen]
+[learned ] step  8800 examples  1126528 val 0.3459 [frozen]
+[learned ] step  8900 examples  1139328 val 0.4305 [frozen]
+[learned ] step  8999 examples  1152000 val 0.4308 [frozen]

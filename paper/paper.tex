@@ -44,7 +44,10 @@ notion of difficulty. On a controlled char-level language modelling task with
 graded, heterogeneous example difficulty, the learned reweighter statistically
 matches the oracle gradient-norm heuristic---and significantly beats uniform
 SGD on final loss---while eliminating $90\%$ of the expensive per-example
-gradient-norm passes. We give the
+gradient-norm passes. In a more extreme regime where the informative examples are
+a rare ($\sim\!1\%$) hard minority, the benefit sharpens into sample efficiency:
+uniform SGD needs about $1.5$--$1.7\times$ as many gradient examples to reach the
+same loss on the hard subset. We give the
 unbiasedness argument for the importance-weighted update, describe a stabilised
 meta-update (an earlier raw variance-minimising REINFORCE update diverges, and we
 explain why), and release a fully self-contained NumPy implementation with an
@@ -417,6 +420,74 @@ and when one wants a proposal that can be reused (across steps, and in principle
 across runs or models). This mirrors the ``train once, reuse for a week''
 robustness of the learned Girsanov sampler in the Monte Carlo setting
 \citep{virrion2020}.
+
+\subsection{Concentrated difficulty: when the pain is rare}\label{ssec:concentrated}
+The graded task above spreads difficulty across a continuum. We now stress the
+opposite, more extreme regime---one the method is designed for---in which the
+informative ``pain'' is a \emph{tiny} fraction of the data. We build a second
+synthetic corpus in which $99\%$ of the text is a handful of trivially
+predictable deterministic phrases (built from common letters only, so they are
+mastered almost immediately) and the remaining $\sim\!1\%$ is a \emph{rare-but-
+learnable} hard tier: a small fixed codebook of deterministic phrases written in
+rare letters ($\{j,k,q,v,w,x,z\}$) that never appear in the easy text. The hard
+tier is learnable (deterministic, so its loss is reducible) but data-hungry, and
+the model, conditions, and budget are otherwise unchanged.
+
+\paragraph{Why a hard-subset metric.} Because $99\%$ of the data is trivial, it
+dominates the aggregate validation loss and dilutes any difference roughly
+$100$-fold: indeed all three conditions finish at the same \emph{overall} loss
+($\approx\!0.092$ nats/char). The benefit is entirely concentrated in the rare
+tier, so we measure the loss on the hard $1\%$ subset and report how many more
+training examples uniform SGD needs to reach the same hard-subset loss as the
+importance samplers.
+
+\paragraph{Result.} Importance sampling does not change the converged optimum
+(the update is unbiased, Proposition~\ref{prop:unbiased}); its benefit is reduced
+gradient-estimate variance, which on this concentrated task manifests as a
+\emph{sample-efficiency} gain---uniform SGD travels the same path but needs more
+examples to get there. Table~\ref{tab:concentrated} quantifies it: to reach a
+given hard-subset loss, uniform needs about $1.5$--$1.7\times$ as many gradient
+examples as either importance sampler, and the multiplier grows as the target
+tightens. At the matched final budget the hard-subset loss is $0.54\pm0.11$
+(uniform) versus $0.40\pm0.05$ (grad-norm IS) and $0.39\pm0.03$ (learned); both
+importance samplers significantly beat uniform (paired over 5 seeds, $t=3.2$),
+and here the learned reweighter \emph{matches} the every-step oracle ($t=0.2$,
+within noise) while still computing the gradient-norm target on only $10\%$ of
+steps (Figure~\ref{fig:concentrated}). This is the regime where concentrating
+the sampling effort pays off most.
+
+\begin{table}[t]
+\centering
+\caption{Concentrated regime ($99\%$ easy / $1\%$ rare-but-learnable hard).
+Gradient examples (thousands) needed to first reach a hard-subset validation-loss
+target, mean over 5 seeds, and the multiplier---how many more examples uniform
+SGD needs than each importance sampler. Lower examples / higher multiplier is
+better.}
+\label{tab:concentrated}
+\small
+\begin{tabular}{lccccc}
+\toprule
+Hard target & Uniform & Grad-norm IS & Learned & Uniform/Gr.-norm & Uniform/Learned \\
+\midrule
+$1.10$ & $571$ & $373$ & $399$ & $1.51\times$ & $1.42\times$ \\
+$1.00$ & $636$ & $404$ & $422$ & $1.55\times$ & $1.49\times$ \\
+$0.90$ & $689$ & $427$ & $452$ & $1.59\times$ & $1.51\times$ \\
+$0.80$ & $778$ & $471$ & $488$ & $1.63\times$ & $1.58\times$ \\
+$0.70$ & $866$ & $510$ & $545$ & $\mathbf{1.68\times}$ & $\mathbf{1.57\times}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.78\textwidth]{../figs/curves_concentrated.pdf}
+\caption{Concentrated regime: hard-subset validation loss versus compute budget
+(mean $\pm$ s.d., 5 seeds). Both importance samplers reach any given hard-subset
+loss with fewer gradient examples than uniform SGD---the curves are shifted left.
+The aggregate loss (not shown) is identical across methods, so this benefit is
+invisible without isolating the rare hard tier.}
+\label{fig:concentrated}
+\end{figure}
 
 \section{Limitations}
 The experiment is deliberately small and controlled (a char-level MLP on

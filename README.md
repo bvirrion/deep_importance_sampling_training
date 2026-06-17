@@ -59,10 +59,35 @@ every-step oracle heuristic (the gap is within noise) and beats uniform — its
 value is reaching the oracle's accuracy and efficiency cheaply (90% fewer
 selection passes) and being reusable.
 
+## Second experiment: concentrated difficulty (when the pain is rare)
+
+A second corpus stresses the regime the method is built for: **99% trivially-easy**
+deterministic text and a **rare (~1%) but learnable hard tier** (a fixed codebook
+of deterministic phrases in rare letters absent from the easy text). Because the
+easy 99% dominates the aggregate loss (~0.092 for all methods — the benefit is
+invisible there), we measure the loss on the **hard 1% subset** and report how
+many more examples uniform needs to reach it.
+
+| Hard-subset target | Uniform | Grad-norm IS | Learned | **Uniform / IS** |
+|--------------------|---------|--------------|---------|------------------|
+| 1.10               | 571k    | 373k         | 399k    | 1.51× / 1.42×    |
+| 0.90               | 689k    | 427k         | 452k    | 1.59× / 1.51×    |
+| 0.70               | 866k    | 510k         | 545k    | **1.68× / 1.57×**|
+
+**Uniform SGD needs ~1.5–1.7× more training examples than the importance samplers
+to reach the same hard-subset loss** (the multiplier grows as the target tightens).
+Both IS methods significantly beat uniform (paired `t≈3.2`) and the learned
+reweighter matches the every-step oracle (`t=0.2`). Since the update is unbiased,
+this is a pure variance-reduction *speed-up* — it shows up as sample efficiency on
+the rare tier, not as a different converged loss. Run with
+`python3 -m code.run_experiment_concentrated` (writes `results_concentrated.json`
+and `figs/curves_concentrated.*`).
+
 ## Reproduce
 
 ```bash
-python3 -m code.run_experiment   # run from the repo root; CPU only, no GPU/torch
+python3 -m code.run_experiment                # main graded-difficulty experiment
+python3 -m code.run_experiment_concentrated   # concentrated 99%/1% experiment
 cd paper
 pdflatex paper.tex && pdflatex paper.tex
 ```
