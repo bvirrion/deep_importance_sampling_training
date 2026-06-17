@@ -63,8 +63,17 @@ def _draw_pool(rng, Ntr, pool_size):
 
 
 def train_gradnorm(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
-                   pool_size, eval_every, seed=0, log=None):
-    """Fixed heuristic: sample minibatch from a pool with p ~ gradnorm proxy."""
+                   pool_size, eval_every, seed=0, log=None, debias=True):
+    """Fixed heuristic: sample minibatch from a pool with p ~ gradnorm proxy.
+
+    debias=True  -> importance-weighted, *unbiased* update (the estimator only
+                    changes variance, not the expected optimisation trajectory).
+    debias=False -> plain-mean update on the proposal-sampled batch. This is a
+                    *biased* variant: it still samples more where the gradient is
+                    large, but trains on the ordinary gradient, deliberately
+                    steering the trajectory toward high-gradient examples (soft
+                    hard-example mining) to reduce their error faster.
+    """
     rng = np.random.default_rng(seed)
     model = CharLM(vocab_size, seed=seed)
     Ntr = Xtr.shape[0]
@@ -80,12 +89,15 @@ def train_gradnorm(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
         p = gnorm + 1e-8
         p = p / p.sum()
         sub = rng.choice(pool_size, size=batch, replace=True, p=p)
-        # importance weights to de-bias: 1/(N_pool * p_i), normalised to mean 1
-        w = 1.0 / (pool_size * p[sub])
-        w = w / w.mean() / batch
         Xb, yb = Xp[sub], yp[sub]
         cache_b = model.forward(Xb)
-        grads = model.backward(cache_b, yb, weights=w)
+        if debias:
+            # importance weights to de-bias: 1/(N_pool * p_i), normalised to mean 1
+            w = 1.0 / (pool_size * p[sub])
+            w = w / w.mean() / batch
+            grads = model.backward(cache_b, yb, weights=w)
+        else:
+            grads = model.backward(cache_b, yb)   # plain mean -> biased
         model.sgd_step(grads, lr)
         examples_consumed += batch
         if t % eval_every == 0 or t == steps - 1:
@@ -98,7 +110,7 @@ def train_gradnorm(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
 
 def train_learned(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
                   pool_size, meta_lr, eval_every, seed=0, log=None,
-                  hidden=32, meta_burst=100, refresh_period=1000):
+                  hidden=32, meta_burst=100, refresh_period=1000, debias=True):
     """Proposed method: neural reweighter with a periodic-refresh duty-cycle.
 
     The reweighter is meta-trained in short bursts and otherwise used frozen on
@@ -113,6 +125,10 @@ def train_learned(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
     only a small fraction of steps, and the periodic refresh lets the proposal
     track the model's drifting notion of which examples are informative -- unlike
     the fixed heuristic, which must recompute its proxy every step.
+
+    debias=True keeps the unbiased importance-weighted update; debias=False uses a
+    plain-mean update on the proposal-sampled batch (a biased variant that steers
+    training toward high-gradient examples to reduce their error faster).
     """
     rng = np.random.default_rng(seed)
     model = CharLM(vocab_size, seed=seed)
@@ -133,12 +149,15 @@ def train_learned(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
             gnorm = model.per_example_gradnorm(cache, yp)
             gradnorm_passes += 1
         idx, p = rw.sample(feats, batch, rng)
-        w = 1.0 / (pool_size * p[idx])
-        w = np.clip(w, 0.0, np.quantile(w, 0.99) + 1e-12)
-        w = w / w.mean() / batch
         Xb, yb = Xp[idx], yp[idx]
         cache_b = model.forward(Xb)
-        grads = model.backward(cache_b, yb, weights=w)
+        if debias:
+            w = 1.0 / (pool_size * p[idx])
+            w = np.clip(w, 0.0, np.quantile(w, 0.99) + 1e-12)
+            w = w / w.mean() / batch
+            grads = model.backward(cache_b, yb, weights=w)
+        else:
+            grads = model.backward(cache_b, yb)   # plain mean -> biased
         model.sgd_step(grads, lr)
         if meta_step:
             cur_cost = rw.meta_update(feats, p, idx, gnorm, meta_lr)

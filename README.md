@@ -83,11 +83,34 @@ the rare tier, not as a different converged loss. Run with
 `python3 -m code.run_experiment_concentrated` (writes `results_concentrated.json`
 and `figs/curves_concentrated.*`).
 
+## Third experiment: trading unbiasedness for speed (biased sampling)
+
+What if we keep the change of measure for **sampling** but **drop the importance
+weights** and train on the plain-mean gradient? The update is then *biased* — it
+steers training toward high-gradient examples (soft hard-example mining). On the
+concentrated task this is much faster (5 seeds, hard-subset loss):
+
+| Method                       | Final hard loss | Examples to 0.9 | Speed-up vs uniform |
+|------------------------------|-----------------|-----------------|---------------------|
+| Uniform SGD                  | 0.835 ± 0.182   | 582k            | 1.0×                |
+| Grad-norm IS (unbiased)      | 0.470 ± 0.059   | 427k            | 1.5×                |
+| **Grad-norm sampling, biased** | **0.368 ± 0.045** | **121k**      | **5.4×**            |
+| Learned sampling, biased     | 0.375 ± 0.050   | 164k            | 3.9×                |
+
+**~5× faster than uniform** (and ~3.6× faster than the unbiased sampler) to reach
+the rare-tier target, with the lowest final hard loss — but at two honest costs:
+**(i)** it's biased, so on the spread-out *graded* task it instead **hurts** (0.61
+vs 0.55); **(ii)** it's less stable — it **diverges for any learning rate ≥ 1.0**,
+while uniform is stable up to 3.0. A targeted tool for the rare-but-learnable
+regime. Run with `python3 -m code.run_experiment_biased` (writes `results_biased.json`
+and `figs/curves_biased.*`).
+
 ## Reproduce
 
 ```bash
 python3 -m code.run_experiment                # main graded-difficulty experiment
 python3 -m code.run_experiment_concentrated   # concentrated 99%/1% experiment
+python3 -m code.run_experiment_biased         # biased-sampling variant + lr sweep
 cd paper
 pdflatex paper.tex && pdflatex paper.tex
 ```

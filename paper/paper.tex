@@ -489,6 +489,94 @@ invisible without isolating the rare hard tier.}
 \label{fig:concentrated}
 \end{figure}
 
+\subsection{Trading unbiasedness for speed: biased sampling}\label{ssec:biased}
+Everything so far keeps the importance-weighted update \emph{unbiased}
+(Proposition~\ref{prop:unbiased}), so the change of measure can only reduce
+variance, never steer the optimisation. In the concentrated regime that caps the
+benefit at the variance-reduction speed-up of $\sim\!1.5\times$ above. We now ask
+what happens if we keep the change of measure for \emph{sampling}---draw the
+minibatch from the pool in proportion to the gradient-norm proxy (or the learned
+proposal)---but \emph{drop} the importance weights and train on the ordinary
+plain-mean gradient. The resulting update is deliberately \emph{biased}: it
+oversamples high-gradient examples and does not correct for it, steering the
+trajectory toward the rare hard tier (soft hard-example mining).
+
+\paragraph{Result.} On the concentrated task this is dramatically faster
+(Table~\ref{tab:biased}, Figure~\ref{fig:biased}). To reach a hard-subset loss of
+$0.9$, biased grad-norm sampling needs $5.4\times$ fewer gradient examples than
+uniform---and $\sim\!3.6\times$ fewer than the \emph{unbiased} grad-norm
+sampler---while also reaching the lowest final hard-subset loss
+($0.37\pm0.04$ vs $0.84\pm0.18$ for uniform; paired $t=5.3$ over 5 seeds). The
+learned proposal behaves the same way ($\sim\!4\times$ faster than uniform). The
+aggregate loss is unaffected ($\approx\!0.094$), so the easy majority is not
+sacrificed; the gain is concentrated entirely on the rare hard tier.
+
+\paragraph{The two costs.} This speed is bought with two concessions, and we
+report both. \emph{(i) Bias.} The update no longer targets the true objective: it
+optimises a gradient-norm-tilted surrogate, which helps only when the
+high-gradient examples are exactly the ones one cares about. In the spread-out
+graded task of our main experiment the same biased update instead
+\emph{increased} final validation loss (to $0.61$ vs $0.55$ for uniform, 3 seeds),
+because there much of the gradient mass sits on the near-random, partly
+irreducible bursts. \emph{(ii) Stability.} Removing the debiasing weights makes
+the update markedly less robust to the learning rate. Table~\ref{tab:biaslr}: at
+the rate used throughout ($\eta=0.5$) all methods are stable, but the biased
+samplers \emph{diverge} for every $\eta\ge1.0$ (3/3 seeds), whereas uniform SGD
+(and the unbiased samplers) remain stable up to $\eta=3.0$. The biased variant
+therefore demands a conservatively small step size. We read biased sampling as the
+aggressive complement to the unbiased reweighter: far faster where the pain is
+rare and learnable, at the price of unbiasedness and a narrower stable-rate range.
+
+\begin{table}[t]
+\centering
+\caption{Biased sampling on the concentrated task (5 seeds, $\eta=0.5$). Final
+hard-subset loss and gradient examples (thousands) to first reach a hard-subset
+loss of $0.9$, with the speed-up over uniform. Biased samplers sample with the
+change of measure but train on the plain-mean gradient (no debiasing).}
+\label{tab:biased}
+\small
+\begin{tabular}{lccc}
+\toprule
+& Final hard loss & Examples to $0.9$ ($\times10^3$) & Speed-up vs uniform \\
+\midrule
+Uniform SGD                 & $0.835 \pm 0.182$ & $582$ & $1.0\times$ \\
+Grad-norm IS (unbiased)     & $0.470 \pm 0.059$ & $427$ & $1.5\times$ \\
+Learned IS (unbiased)       & $0.454 \pm 0.055$ & $452$ & $1.4\times$ \\
+Grad-norm sampling, biased  & $\mathbf{0.368 \pm 0.045}$ & $\mathbf{121}$ & $\mathbf{5.4\times}$ \\
+Learned sampling, biased    & $0.375 \pm 0.050$ & $164$ & $3.9\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Learning-rate stability on the concentrated task (3 seeds). Final
+hard-subset loss (``--'' $=$ diverged) and number of diverged seeds. The biased
+samplers diverge for any $\eta\ge1.0$; uniform SGD is stable throughout.}
+\label{tab:biaslr}
+\small
+\begin{tabular}{lcccc}
+\toprule
+& $\eta=0.5$ & $\eta=1.0$ & $\eta=2.0$ & $\eta=3.0$ \\
+\midrule
+Uniform SGD                & $1.10$ (0/3) & $0.62$ (0/3) & $0.45$ (0/3) & $0.43$ (0/3) \\
+Grad-norm sampling, biased & $0.41$ (0/3) & -- (3/3) & -- (3/3) & -- (3/3) \\
+Learned sampling, biased   & $0.42$ (0/3) & -- (3/3) & -- (3/3) & -- (3/3) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.78\textwidth]{../figs/curves_biased.pdf}
+\caption{Biased sampling vs unbiased importance sampling vs uniform on the
+concentrated task (hard-subset loss, mean $\pm$ s.d., 5 seeds). Dropping the
+debiasing weights (solid red/orange) drives the rare-tier loss down several times
+faster than either the unbiased samplers (dashed) or uniform---at the cost of
+unbiasedness and a narrower stable learning-rate range (Table~\ref{tab:biaslr}).}
+\label{fig:biased}
+\end{figure}
+
 \section{Limitations}
 The experiment is deliberately small and controlled (a char-level MLP on
 synthetic data, CPU-only, pure NumPy) to make the mechanism and the
