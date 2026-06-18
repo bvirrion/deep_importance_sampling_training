@@ -221,7 +221,8 @@ def _grouped_improvement(model, clone, Xp, yp, content, Xref, yref, alpha,
 def train_learned_reducible(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
                             pool_size, meta_lr, eval_every, Xref, yref,
                             seed=0, log=None, hidden=32, meta_burst=50,
-                            refresh_period=500, probe_lr=0.1, n_groups=8):
+                            refresh_period=500, probe_lr=0.1, n_groups=8,
+                            debias=False):
     """Sampler trained on measured *reducible improvement* instead of gradient norm.
 
     During short periodic bursts we cluster the pool by content and measure, per
@@ -232,9 +233,13 @@ def train_learned_reducible(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
     can tell learnable regions from noise regions, and between bursts it is frozen
     and used on cheap features alone.
 
-    The model update is the BIASED plain-mean gradient over the proposal-sampled
-    batch (no importance weights), per the deliberately-biased variant: we sample
-    where improvement is high and train on the ordinary gradient.
+    debias=False (default) uses the BIASED plain-mean gradient over the
+    proposal-sampled batch: we sample where improvement is high and train on the
+    ordinary gradient, deliberately steering toward learnable examples.
+    debias=True instead applies the importance weights 1/(N p_i), so the same
+    learned change of measure is used for BOTH the sampling and the (now unbiased)
+    gradient estimator -- it follows the full-pool mean gradient with a proposal
+    chosen by learnability rather than by gradient norm.
     """
     rng = np.random.default_rng(seed)
     model = CharLM(vocab_size, seed=seed)
@@ -260,7 +265,13 @@ def train_learned_reducible(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
         idx, p = rw.sample(feats, batch, rng)
         Xb, yb = Xp[idx], yp[idx]
         cache_b = model.forward(Xb)
-        grads = model.backward(cache_b, yb)        # biased plain-mean update
+        if debias:
+            w = 1.0 / (pool_size * p[idx])
+            w = np.clip(w, 0.0, np.quantile(w, 0.99) + 1e-12)
+            w = w / w.mean() / batch
+            grads = model.backward(cache_b, yb, weights=w)   # unbiased
+        else:
+            grads = model.backward(cache_b, yb)              # biased plain-mean
         model.sgd_step(grads, lr)
         if meta_step:
             rw.meta_update(feats, p, idx, target, meta_lr)

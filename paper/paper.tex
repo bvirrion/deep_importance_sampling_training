@@ -616,39 +616,58 @@ learnable tier ($0.3\times$), while the reducible-improvement scorer concentrate
 on the learnable tier ($1.6\times$) and leaves noise near uniform ($0.9\times$)---it
 learned, from measured improvement, to ignore the junk that the gradient norm
 cannot distinguish. On the capability we care about (Table~\ref{tab:reducible},
-Figure~\ref{fig:reducible}) this is decisive: the reducible sampler reaches the
-learnable-subset loss \emph{$4.2$--$4.3\times$ faster than uniform} and
+Figure~\ref{fig:reducible}) this is decisive: the biased reducible sampler reaches
+the learnable-subset loss \emph{$4.2$--$4.3\times$ faster than uniform} and
 $\sim\!1.9\times$ faster than the gradient-norm sampler, and attains the lowest
 final learnable loss ($0.260$ vs $0.291$ uniform). The gradient-norm sampler, by
 chasing noise, actually ends up \emph{no better than uniform} on the learnable
 capability ($0.305$) despite an early speed-up---a concrete instance of the
 failure mode that motivates reducible-loss selection.
 
+\paragraph{Biased vs.\ unbiased.} The speed-up above uses the biased plain-mean
+update. If we instead \emph{debias}---use the same learned change of measure as an
+importance-sampling proposal with weights $1/(n p_i)$, so the estimator is unbiased
+for the full-pool gradient---the speed-up essentially vanishes: the unbiased
+reducible sampler falls back to roughly uniform ($0.292$ final loss,
+$\sim\!0.9\times$ uniform's examples-to-target; Table~\ref{tab:reducible}). This is
+expected---an unbiased estimator shares uniform's \emph{expected} trajectory for
+any proposal (Proposition~\ref{prop:unbiased})---so the gain was intrinsically a
+property of the \emph{biased} objective, which concentrates learning on the
+learnable tier rather than fitting the full (noise-laden) gradient. What debiasing
+buys instead is robustness: in a learning-rate sweep the unbiased variant remains
+stable at $\eta=2.0$, where the biased variant begins to diverge, so debiasing
+trades the speed-up for a wider stable-rate range. (Unbiased gradnorm-IS does not
+even match uniform here---its $\propto\|g\|$ proposal pours weight on the
+high-gradient noise, and the resulting importance weights add variance.)
+
 \paragraph{Costs.} The signal is more expensive than a gradient-norm pass: each
 burst pays a forward and backward pass plus a reference evaluation per content
-cluster, and
-it requires a held-out reference set that \emph{defines} the target capability
-(choose it wrongly and the scorer optimises the wrong objective). It also inherits
-the biased variant's narrow stable learning-rate range. Within those costs, it
-demonstrates the point: a sampler trained on \emph{realized improvement} rather
-than gradient magnitude focuses compute where learning is actually possible.
+cluster, and it requires a held-out reference set that \emph{defines} the target
+capability (choose it wrongly and the scorer optimises the wrong objective).
+Within those costs, it demonstrates the point: a sampler trained on \emph{realized
+improvement} rather than gradient magnitude focuses compute where learning is
+actually possible.
 
 \begin{table}[t]
 \centering
 \caption{Reducible-improvement sampling (concentrated corpus with a learnable and
-an unlearnable-noise tier, 5 seeds, biased update). Loss is on the held-out
-\emph{learnable} subset (the capability we care about); ``examples to $0.8$'' is the
-gradient examples (thousands) to first reach that loss, with the speed-up over
-uniform. The gradient-norm sampler chases noise and ends no better than uniform.}
+an unlearnable-noise tier, 5 seeds). Loss is on the held-out \emph{learnable}
+subset (the capability we care about); ``examples to $0.8$'' is the gradient
+examples (thousands) to first reach that loss, with the speed-up over uniform. The
+gradient-norm sampler chases noise and ends no better than uniform; the biased
+reducible sampler is best; debiasing the reducible sampler removes the speed-up
+(it falls back to uniform).}
 \label{tab:reducible}
 \small
 \begin{tabular}{lccc}
 \toprule
 & Final learnable loss & Examples to $0.8$ ($\times10^3$) & Speed-up vs uniform \\
 \midrule
-Uniform SGD                     & $0.291 \pm 0.032$ & $196$ & $1.0\times$ \\
-Grad-norm sampling, biased      & $0.305 \pm 0.013$ & $90$  & $2.2\times$ \\
-Reducible-improvement (ours)    & $\mathbf{0.260 \pm 0.031}$ & $\mathbf{50}$ & $\mathbf{4.2\times}$ \\
+Uniform SGD              & $0.291 \pm 0.032$ & $196$ & $1.0\times$ \\
+Grad-norm IS (unbiased)  & $0.320 \pm 0.031$ & $163$ & $1.2\times$ \\
+Grad-norm, biased        & $0.305 \pm 0.013$ & $90$  & $2.2\times$ \\
+Reducible, biased (ours) & $\mathbf{0.260 \pm 0.031}$ & $\mathbf{50}$ & $\mathbf{4.2\times}$ \\
+Reducible, unbiased (ours) & $0.292 \pm 0.029$ & $210$ & $0.9\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -666,9 +685,10 @@ targets the learnable tier and ignores the noise.}
 \begin{minipage}{0.48\textwidth}
 \centering
 \includegraphics[width=\textwidth]{../figs/curves_reducible.pdf}
-\caption{Learnable-subset loss vs budget (mean $\pm$ s.d., 5 seeds). The reducible
-sampler reaches it several times faster; the gradient-norm sampler, distracted by
-noise, barely improves on uniform.}
+\caption{Learnable-subset loss vs budget (mean $\pm$ s.d., 5 seeds). The biased
+reducible sampler (solid red) reaches it several times faster; the gradient-norm
+samplers barely improve on uniform; debiasing the reducible sampler (orange)
+removes the speed-up, returning to uniform.}
 \label{fig:reducible}
 \end{minipage}
 \end{figure}

@@ -124,7 +124,18 @@ The gradient-norm sampler's **biggest target is the unlearnable noise**, so it e
 up no better than uniform on the learnable capability. The reducible scorer learns
 to **ignore the noise** and focus on the learnable tier, reaching that capability
 ~4.2× faster than uniform (and ~1.9× faster than gradnorm). Cost: a few reference
-evals per burst + a held-out set defining the target capability. Run with
+evals per burst + a held-out set defining the target capability.
+
+**Biased vs. unbiased.** The speed-up uses the biased plain-mean update. If we
+instead *debias* (use the same learned change of measure as an importance-sampling
+proposal with weights `1/(N·p_i)`, so the gradient estimator is unbiased), the
+speed-up **vanishes** — the unbiased reducible sampler falls back to ~uniform
+(0.292 final, 0.9× examples-to-target). That's expected: an unbiased estimator
+shares uniform's expected trajectory for any proposal, so the gain was intrinsically
+from the *biased* objective (concentrating learning on the learnable tier). What
+debiasing buys instead is **robustness** — it stays stable at lr=2.0 where the
+biased version starts to diverge. (Unbiased grad-norm IS doesn't even match uniform
+here: its ∝‖g‖ proposal dumps weight on the noise.) Run with
 `python3 -m code.run_experiment_reducible` (writes `results_reducible.json`,
 `figs/curves_reducible.*`, `figs/weights_reducible.*`).
 

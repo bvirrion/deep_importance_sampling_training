@@ -37,8 +37,15 @@ CONFIG = dict(
     lr=0.5, meta_lr=0.2, hidden=32, eval_every=100,
     meta_burst=50, refresh_period=500, probe_lr=0.1, n_groups=8,
     ref_size=256, seeds=[0, 1, 2, 3, 4], taus=[1.0, 0.8, 0.6],
+    sweep_lrs=[0.5, 1.0, 2.0], sweep_seeds=[0, 1], sweep_steps=2000,
 )
 TIER = {0: "easy", 1: "learnable", 2: "noise"}
+CONDS = ["uniform", "gradnorm_is", "gradnorm_biased", "reducible", "reducible_unbiased"]
+LABELS = {"uniform": "Uniform SGD",
+          "gradnorm_is": "Grad-norm IS (unbiased)",
+          "gradnorm_biased": "Grad-norm biased",
+          "reducible": "Reducible biased (ours)",
+          "reducible_unbiased": "Reducible unbiased (ours)"}
 
 
 def _splits(seed, cfg):
@@ -86,40 +93,61 @@ def ex_to_target(curve, tau):
     return np.nan
 
 
+def train_cond(cond, Xtr, ytr, Xle, yle, V, Xref, yref, cfg, seed, steps=None, lr=None):
+    """Dispatch a single condition; returns (model, curve, rw_or_None)."""
+    com = dict(steps=steps or cfg["steps"], batch=cfg["batch"], lr=lr or cfg["lr"],
+               eval_every=cfg["eval_every"], seed=seed)
+    if cond == "uniform":
+        m, c = train_uniform(Xtr, ytr, Xle, yle, V, **com)
+        return m, c, None
+    if cond.startswith("gradnorm"):
+        m, c, _ = train_gradnorm(Xtr, ytr, Xle, yle, V, pool_size=cfg["pool_size"],
+                                 debias=(cond == "gradnorm_is"), **com)
+        return m, c, None
+    # reducible (biased) / reducible_unbiased
+    m, c, rw, _ = train_learned_reducible(
+        Xtr, ytr, Xle, yle, V, pool_size=cfg["pool_size"], meta_lr=cfg["meta_lr"],
+        Xref=Xref, yref=yref, hidden=cfg["hidden"], meta_burst=cfg["meta_burst"],
+        refresh_period=cfg["refresh_period"], probe_lr=cfg["probe_lr"],
+        n_groups=cfg["n_groups"], debias=(cond == "reducible_unbiased"), **com)
+    return m, c, rw
+
+
+def curve_jitter(cv):
+    """Mean step-to-step |delta| over the latter half of a curve -- a cheap variance proxy."""
+    ys = np.array([v for _, v in cv])
+    h = len(ys) // 2
+    return float(np.abs(np.diff(ys[h:])).mean()) if len(ys) - h > 1 else float("nan")
+
+
 def main():
     cfg = CONFIG
     logs = []
     def log(m): logs.append(m); print(m, flush=True)
 
-    conds = ["uniform", "gradnorm_biased", "reducible"]
+    conds = CONDS
     curves = {c: [] for c in conds}          # learnable-subset loss curve per seed
     noise_final = {c: [] for c in conds}
     overall_final = {c: [] for c in conds}
+    jitter = {c: [] for c in conds}
     shares = {"gradnorm": [], "reducible": []}
 
     for s in cfg["seeds"]:
         log(f"==== seed {s} ====")
         (Xtr, ytr), (Xv, yv), mtr, ref, leval, neval, V = _splits(s, cfg)
         Xle, yle = leval; Xne, yne = neval; Xref, yref = ref
-        com = dict(steps=cfg["steps"], batch=cfg["batch"], lr=cfg["lr"],
-                   eval_every=cfg["eval_every"], seed=s)
-        # curve is evaluated on the held-out LEARNABLE subset (the capability we care about)
-        m_u, c_u = train_uniform(Xtr, ytr, Xle, yle, V, **com)
-        m_g, c_g, _ = train_gradnorm(Xtr, ytr, Xle, yle, V, pool_size=cfg["pool_size"],
-                                     debias=False, **com)
-        m_r, c_r, rw, mp = train_learned_reducible(
-            Xtr, ytr, Xle, yle, V, pool_size=cfg["pool_size"], meta_lr=cfg["meta_lr"],
-            Xref=Xref, yref=yref, hidden=cfg["hidden"], meta_burst=cfg["meta_burst"],
-            refresh_period=cfg["refresh_period"], probe_lr=cfg["probe_lr"],
-            n_groups=cfg["n_groups"], **com)
-        for c, cv, mdl in [("uniform", c_u, m_u), ("gradnorm_biased", c_g, m_g),
-                           ("reducible", c_r, m_r)]:
+        rw_red = None
+        for c in conds:
+            mdl, cv, rw = train_cond(c, Xtr, ytr, Xle, yle, V, Xref, yref, cfg, s)
             curves[c].append(cv)
             noise_final[c].append(float(evaluate(mdl, Xne, yne)))
             overall_final[c].append(float(evaluate(mdl, Xv, yv)))
-        sh = tier_weight_share(m_r, rw, Xtr, ytr, mtr, cfg, s)
+            jitter[c].append(curve_jitter(cv))
+            if c == "reducible":
+                rw_red = rw
+        sh = tier_weight_share(mdl, rw_red, Xtr, ytr, mtr, cfg, s)
         shares["gradnorm"].append(sh["gradnorm"]); shares["reducible"].append(sh["reducible"])
-        log(f"  learnable-final: uniform {c_u[-1][1]:.3f}  gradnorm_b {c_g[-1][1]:.3f}  reducible {c_r[-1][1]:.3f}")
+        log("  learnable-final: " + "  ".join(f"{c} {curves[c][-1][-1][1]:.3f}" for c in conds))
 
     summary = {}
     for c in conds:
@@ -129,6 +157,7 @@ def main():
             learn_final_mean=float(M[:, -1].mean()), learn_final_std=float(M[:, -1].std()),
             noise_final_mean=float(np.mean(noise_final[c])),
             overall_final_mean=float(np.mean(overall_final[c])),
+            curve_jitter=float(np.nanmean(jitter[c])),
             curve_x=xs.tolist(), curve_mean=M.mean(0).tolist(), curve_std=M.std(0).tolist())
 
     # tier weight shares (mean over seeds)
@@ -143,29 +172,54 @@ def main():
         ex = {c: np.array([ex_to_target(cv, tau) for cv in curves[c]]) for c in conds}
         for c in conds:
             rec[c] = float(np.nanmean(ex[c]))
-        for c in ["gradnorm_biased", "reducible"]:
-            rec[f"uniform_over_{c}"] = float(np.nanmean(ex["uniform"] / ex[c]))
+            if c != "uniform":
+                rec[f"uniform_over_{c}"] = float(np.nanmean(ex["uniform"] / ex[c]))
         eff.append(rec)
     summary["efficiency_learnable"] = eff
+
+    # lr-stability sweep: reducible biased vs unbiased (does debiasing widen usable lr?)
+    log("\n==== lr stability sweep (reducible biased vs unbiased) ====")
+    sweep = []
+    for lr in cfg["sweep_lrs"]:
+        rec = {"lr": float(lr)}
+        for c in ["reducible", "reducible_unbiased"]:
+            finals, ndiv = [], 0
+            for s in cfg["sweep_seeds"]:
+                (Xtr, ytr), (Xv, yv), mtr, ref, leval, neval, V = _splits(s, cfg)
+                _, cv, _ = train_cond(c, Xtr, ytr, leval[0], leval[1], V, ref[0], ref[1],
+                                      cfg, s, steps=cfg["sweep_steps"], lr=lr)
+                fv = cv[-1][1]
+                if (not np.isfinite(fv)) or fv > 5.0:
+                    ndiv += 1
+                else:
+                    finals.append(fv)
+            rec[c] = dict(learn_final=(float(np.mean(finals)) if finals else float("nan")),
+                          diverged=ndiv, n=len(cfg["sweep_seeds"]))
+        sweep.append(rec)
+        log(f"  lr={lr}: " + " | ".join(
+            f"{c} {rec[c]['learn_final']:.3f}(div{rec[c]['diverged']}/{rec[c]['n']})"
+            for c in ["reducible", "reducible_unbiased"]))
+    summary["lr_sweep"] = sweep
     summary["config"] = cfg
 
     with open(os.path.join(REPO_ROOT, "results_reducible.json"), "w") as f:
         json.dump(summary, f, indent=2)
 
     # figure: learnable-subset loss vs budget
-    plt.figure(figsize=(7.2, 4.6))
-    colors = dict(uniform="#888888", gradnorm_biased="#1f77b4", reducible="#d62728")
-    labels = dict(uniform="Uniform SGD", gradnorm_biased="Grad-norm biased (chases noise)",
-                  reducible="Reducible-improvement (ours)")
+    plt.figure(figsize=(7.4, 4.8))
+    colors = dict(uniform="#888888", gradnorm_is="#9467bd", gradnorm_biased="#1f77b4",
+                  reducible="#d62728", reducible_unbiased="#ff7f0e")
+    styles = dict(uniform="-", gradnorm_is="--", gradnorm_biased="--",
+                  reducible="-", reducible_unbiased="-")
     for c in conds:
         xs = np.array(summary[c]["curve_x"]); mu = np.array(summary[c]["curve_mean"])
         sd = np.array(summary[c]["curve_std"])
-        plt.plot(xs, mu, color=colors[c], label=labels[c], linewidth=2)
-        plt.fill_between(xs, mu - sd, mu + sd, color=colors[c], alpha=0.13)
+        plt.plot(xs, mu, styles[c], color=colors[c], label=LABELS[c], linewidth=2)
+        plt.fill_between(xs, mu - sd, mu + sd, color=colors[c], alpha=0.10)
     plt.xlabel("training examples consumed")
     plt.ylabel("learnable-subset validation loss (nats/char)")
-    plt.title("Reducible-improvement sampling vs gradnorm-biased vs uniform")
-    plt.legend(); plt.grid(alpha=0.3); plt.tight_layout()
+    plt.title("Reducible-improvement sampling: biased vs unbiased vs baselines")
+    plt.legend(fontsize=8); plt.grid(alpha=0.3); plt.tight_layout()
     plt.savefig(os.path.join(FIGS_DIR, "curves_reducible.pdf"))
     plt.savefig(os.path.join(FIGS_DIR, "curves_reducible.png"), dpi=130)
     plt.close()
@@ -192,17 +246,24 @@ def main():
     print(f"\n==== SUMMARY (reducible, {len(cfg['seeds'])} seeds) ====")
     for c in conds:
         s = summary[c]
-        print(f"{c:16s} learnable-final {s['learn_final_mean']:.4f}+/-{s['learn_final_std']:.4f}"
-              f"  noise-final {s['noise_final_mean']:.3f}  overall {s['overall_final_mean']:.4f}")
+        print(f"{c:20s} learnable-final {s['learn_final_mean']:.4f}+/-{s['learn_final_std']:.4f}"
+              f"  jitter {s['curve_jitter']:.4f}  noise {s['noise_final_mean']:.3f}  overall {s['overall_final_mean']:.4f}")
     print("\nsampling weight (x uniform) per tier:")
     for meth in ["gradnorm", "reducible"]:
         w = summary["weight_share"][meth]
         print(f"  {meth:10s} easy {w['easy']:.2f}  learnable {w['learnable']:.2f}  noise {w['noise']:.2f}")
     print("\nexamples to reach learnable-subset target (mean), multiplier vs uniform:")
     for rec in summary["efficiency_learnable"]:
-        print(f"  tau={rec['tau']}: uniform {rec['uniform']:.0f}  gradnorm_b {rec['gradnorm_biased']:.0f} "
-              f"({rec['uniform_over_gradnorm_biased']:.2f}x)  reducible {rec['reducible']:.0f} "
-              f"({rec['uniform_over_reducible']:.2f}x)")
+        line = f"  tau={rec['tau']}: " + "  ".join(
+            f"{c[:10]} {rec[c]:.0f}" + (f"({rec['uniform_over_'+c]:.2f}x)" if c != "uniform" else "")
+            for c in conds)
+        print(line)
+    print("\nlr-stability sweep (reducible biased vs unbiased): learnable-final (divergences)")
+    for rec in summary["lr_sweep"]:
+        print(f"  lr={rec['lr']}: biased {rec['reducible']['learn_final']:.3f}"
+              f"(div{rec['reducible']['diverged']}/{rec['reducible']['n']})  "
+              f"unbiased {rec['reducible_unbiased']['learn_final']:.3f}"
+              f"(div{rec['reducible_unbiased']['diverged']}/{rec['reducible_unbiased']['n']})")
 
 
 if __name__ == "__main__":

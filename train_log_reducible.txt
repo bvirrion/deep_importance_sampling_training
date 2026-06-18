@@ -1,10 +1,15 @@
 ==== seed 0 ====
-  learnable-final: uniform 0.316  gradnorm_b 0.291  reducible 0.245
+  learnable-final: uniform 0.316  gradnorm_is 0.274  gradnorm_biased 0.291  reducible 0.245  reducible_unbiased 0.277
 ==== seed 1 ====
-  learnable-final: uniform 0.327  gradnorm_b 0.315  reducible 0.291
+  learnable-final: uniform 0.327  gradnorm_is 0.355  gradnorm_biased 0.315  reducible 0.291  reducible_unbiased 0.324
 ==== seed 2 ====
-  learnable-final: uniform 0.275  gradnorm_b 0.296  reducible 0.246
+  learnable-final: uniform 0.275  gradnorm_is 0.294  gradnorm_biased 0.296  reducible 0.246  reducible_unbiased 0.255
 ==== seed 3 ====
-  learnable-final: uniform 0.298  gradnorm_b 0.324  reducible 0.301
+  learnable-final: uniform 0.298  gradnorm_is 0.348  gradnorm_biased 0.324  reducible 0.301  reducible_unbiased 0.328
 ==== seed 4 ====
-  learnable-final: uniform 0.238  gradnorm_b 0.297  reducible 0.219
+  learnable-final: uniform 0.238  gradnorm_is 0.326  gradnorm_biased 0.297  reducible 0.219  reducible_unbiased 0.275
+
+==== lr stability sweep (reducible biased vs unbiased) ====
+  lr=0.5: reducible 0.252(div0/2) | reducible_unbiased 0.632(div0/2)
+  lr=1.0: reducible 0.286(div0/2) | reducible_unbiased 0.299(div0/2)
+  lr=2.0: reducible 0.293(div1/2) | reducible_unbiased 0.280(div0/2)
