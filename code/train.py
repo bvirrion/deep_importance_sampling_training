@@ -19,7 +19,7 @@ within the pool are selected and weighted.
 
 import numpy as np
 from code.model import CharLM
-from code.data import reweighter_features
+from code.data import reweighter_features, reweighter_features_content
 from code.reweighter import Reweighter
 
 
@@ -170,3 +170,105 @@ def train_learned(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
                 log(f"[learned ] step {t:5d} examples {examples_consumed:8d} "
                     f"val {v:.4f}{' [meta]' if meta_step else ' [frozen]'}")
     return model, curve, cost_curve, rw, gradnorm_passes
+
+
+def _kmeans_assign(Z, G, rng, iters=5):
+    """Tiny k-means; returns a cluster id per row of Z."""
+    n = Z.shape[0]
+    G = min(G, n)
+    centers = Z[rng.choice(n, G, replace=False)].copy()
+    assign = np.zeros(n, dtype=np.int64)
+    for _ in range(iters):
+        d = ((Z[:, None, :] - centers[None]) ** 2).sum(-1)   # (n, G)
+        assign = d.argmin(1)
+        for g in range(G):
+            sel = assign == g
+            if sel.any():
+                centers[g] = Z[sel].mean(0)
+    return assign
+
+
+def _grouped_improvement(model, clone, Xp, yp, content, Xref, yref, alpha,
+                         ref_before, n_groups, rng):
+    """Cluster-level realized improvement (route 2, denoised).
+
+    Per-example one-step improvement on a held-out set is far too noisy to use as a
+    label (a single step's effect is dominated by variance). So we cluster the pool
+    by *content* (the mean-embedding features, which separate input regions), take
+    one gradient step on each cluster, and measure the reduction in held-out
+    reference loss it produces:
+
+        impr_g = L_ref(theta) - L_ref(theta - alpha * grad_on_cluster_g).
+
+    Every example in cluster g is labelled with impr_g. A learnable cluster reduces
+    the reference loss (it transfers to held-out learnable data); an
+    unlearnable-noise cluster does not. This separates learnable from noise -- which
+    the gradient norm (large for both) cannot -- and costs only n_groups reference
+    evals per burst step.
+    """
+    n = Xp.shape[0]
+    assign = _kmeans_assign(content, n_groups, rng)
+    target = np.zeros(n)
+    for g in np.unique(assign):
+        sel = assign == g
+        clone.copy_params_from(model)
+        gg = clone.backward(clone.forward(Xp[sel]), yp[sel])   # cluster mean gradient
+        clone.sgd_step(gg, alpha)
+        target[sel] = ref_before - evaluate(clone, Xref, yref)
+    return target
+
+
+def train_learned_reducible(Xtr, ytr, Xv, yv, vocab_size, *, steps, batch, lr,
+                            pool_size, meta_lr, eval_every, Xref, yref,
+                            seed=0, log=None, hidden=32, meta_burst=50,
+                            refresh_period=500, probe_lr=0.1, n_groups=8):
+    """Sampler trained on measured *reducible improvement* instead of gradient norm.
+
+    During short periodic bursts we cluster the pool by content and measure, per
+    cluster, how much a gradient step on it improves loss on a held-out reference
+    set (_grouped_improvement); the scorer is meta-trained to match a proposal
+    proportional to that improvement (clamped at 0, so unlearnable noise -> ~0
+    weight). The scorer sees content-aware features (mean context embedding) so it
+    can tell learnable regions from noise regions, and between bursts it is frozen
+    and used on cheap features alone.
+
+    The model update is the BIASED plain-mean gradient over the proposal-sampled
+    batch (no importance weights), per the deliberately-biased variant: we sample
+    where improvement is high and train on the ordinary gradient.
+    """
+    rng = np.random.default_rng(seed)
+    model = CharLM(vocab_size, seed=seed)
+    clone = CharLM(vocab_size, context=model.C, emb_dim=model.D, hidden=model.H)
+    rw = Reweighter(n_features=5 + model.D, hidden=hidden, seed=seed, temperature=1.0)
+    Ntr = Xtr.shape[0]
+    curve, cost_curve = [], []
+    examples_consumed = 0
+    measure_passes = 0           # number of bursts paying the measurement cost
+    for t in range(steps):
+        pool = _draw_pool(rng, Ntr, pool_size)
+        Xp, yp = Xtr[pool], ytr[pool]
+        cache = model.forward(Xp)
+        feats = reweighter_features_content(model, cache, yp)
+        meta_step = (t % refresh_period) < meta_burst
+        if meta_step:
+            ref_before = evaluate(model, Xref, yref)
+            impr = _grouped_improvement(model, clone, Xp, yp, feats[:, 5:],
+                                        Xref, yref, probe_lr, ref_before,
+                                        n_groups, rng)
+            target = np.maximum(impr, 0.0)
+            measure_passes += 1
+        idx, p = rw.sample(feats, batch, rng)
+        Xb, yb = Xp[idx], yp[idx]
+        cache_b = model.forward(Xb)
+        grads = model.backward(cache_b, yb)        # biased plain-mean update
+        model.sgd_step(grads, lr)
+        if meta_step:
+            rw.meta_update(feats, p, idx, target, meta_lr)
+        examples_consumed += batch
+        if t % eval_every == 0 or t == steps - 1:
+            v = evaluate(model, Xv, yv)
+            curve.append((examples_consumed, v))
+            if log:
+                log(f"[reducible] step {t:5d} examples {examples_consumed:8d} "
+                    f"val {v:.4f}{' [meta]' if meta_step else ' [frozen]'}")
+    return model, curve, rw, measure_passes

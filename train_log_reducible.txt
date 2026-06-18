@@ -1,0 +1,10 @@
+==== seed 0 ====
+  learnable-final: uniform 0.316  gradnorm_b 0.291  reducible 0.245
+==== seed 1 ====
+  learnable-final: uniform 0.327  gradnorm_b 0.315  reducible 0.291
+==== seed 2 ====
+  learnable-final: uniform 0.275  gradnorm_b 0.296  reducible 0.246
+==== seed 3 ====
+  learnable-final: uniform 0.298  gradnorm_b 0.324  reducible 0.301
+==== seed 4 ====
+  learnable-final: uniform 0.238  gradnorm_b 0.297  reducible 0.219

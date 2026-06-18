@@ -577,6 +577,102 @@ unbiasedness and a narrower stable learning-rate range (Table~\ref{tab:biaslr}).
 \label{fig:biased}
 \end{figure}
 
+\subsection{Learning what remains to be learned: reducible-improvement sampling}
+\label{ssec:reducible}
+Sampling proportional to the gradient norm is variance-optimal, but gradient norm
+conflates two very different things: examples that are \emph{hard and learnable}
+and examples that are \emph{hard and unlearnable} (noise, mislabelled or corrupted
+data---ubiquitous in web-scale corpora). Both have large gradients, yet only the
+first is worth training on; a gradient-norm sampler will preferentially feed the
+model its noisiest data. The right target is not gradient magnitude but
+\emph{reducible} improvement---how much training on an input actually lowers loss
+on data one cares about \citep{mindermann2022}, i.e.\ its realized influence on a
+held-out objective \citep{koh2017,pruthi2020}. Here we test whether the sampler
+network can be trained to estimate that quantity directly, rather than the
+gradient, and amortise it as a learned data scorer (in the spirit of learned
+example reweighting \citep{ren2018} and domain reweighting \citep{xie2023}).
+
+\paragraph{Setup.} We build a corpus where high gradient does \emph{not} imply
+learnable: $90\%$ trivially-easy text, plus two high-gradient tiers in disjoint
+content regions---a \emph{learnable} tier (a fixed deterministic codebook in one
+rare-letter set, reducible) and a \emph{noise} tier (freshly-random tokens in a
+disjoint rare-letter set, irreducible). During short periodic bursts we measure
+realized improvement by \emph{route 2}: cluster the candidate pool by content,
+take one gradient step on each cluster, and record the reduction it produces in
+loss on a held-out reference set of learnable examples,
+$\Delta_g = L_{\text{ref}}(\theta) - L_{\text{ref}}(\theta - \alpha\,\bar g_g)$.
+(Per-\emph{example} realized improvement is far too noisy to use as a label---a
+single step's effect is dominated by variance---so we measure at cluster
+granularity, which denoises it at a cost of only a few reference evaluations per
+burst.) The scorer is given content-aware features (the mean context embedding, so
+it can tell input regions apart) and meta-trained to a proposal
+$\propto\max(\Delta,0)$, so unlearnable clusters get $\sim\!0$ weight. We sample
+from the scorer and use the biased plain-mean update of \S\ref{ssec:biased}.
+
+\paragraph{Result.} The two samplers target opposite things
+(Figure~\ref{fig:redweights}): the gradient-norm sampler puts its \emph{largest}
+weight on the unlearnable noise ($2.5\times$ uniform) and under-samples the
+learnable tier ($0.3\times$), while the reducible-improvement scorer concentrates
+on the learnable tier ($1.6\times$) and leaves noise near uniform ($0.9\times$)---it
+learned, from measured improvement, to ignore the junk that the gradient norm
+cannot distinguish. On the capability we care about (Table~\ref{tab:reducible},
+Figure~\ref{fig:reducible}) this is decisive: the reducible sampler reaches the
+learnable-subset loss \emph{$4.2$--$4.3\times$ faster than uniform} and
+$\sim\!1.9\times$ faster than the gradient-norm sampler, and attains the lowest
+final learnable loss ($0.260$ vs $0.291$ uniform). The gradient-norm sampler, by
+chasing noise, actually ends up \emph{no better than uniform} on the learnable
+capability ($0.305$) despite an early speed-up---a concrete instance of the
+failure mode that motivates reducible-loss selection.
+
+\paragraph{Costs.} The signal is more expensive than a gradient-norm pass: each
+burst pays a forward and backward pass plus a reference evaluation per content
+cluster, and
+it requires a held-out reference set that \emph{defines} the target capability
+(choose it wrongly and the scorer optimises the wrong objective). It also inherits
+the biased variant's narrow stable learning-rate range. Within those costs, it
+demonstrates the point: a sampler trained on \emph{realized improvement} rather
+than gradient magnitude focuses compute where learning is actually possible.
+
+\begin{table}[t]
+\centering
+\caption{Reducible-improvement sampling (concentrated corpus with a learnable and
+an unlearnable-noise tier, 5 seeds, biased update). Loss is on the held-out
+\emph{learnable} subset (the capability we care about); ``examples to $0.8$'' is the
+gradient examples (thousands) to first reach that loss, with the speed-up over
+uniform. The gradient-norm sampler chases noise and ends no better than uniform.}
+\label{tab:reducible}
+\small
+\begin{tabular}{lccc}
+\toprule
+& Final learnable loss & Examples to $0.8$ ($\times10^3$) & Speed-up vs uniform \\
+\midrule
+Uniform SGD                     & $0.291 \pm 0.032$ & $196$ & $1.0\times$ \\
+Grad-norm sampling, biased      & $0.305 \pm 0.013$ & $90$  & $2.2\times$ \\
+Reducible-improvement (ours)    & $\mathbf{0.260 \pm 0.031}$ & $\mathbf{50}$ & $\mathbf{4.2\times}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\begin{minipage}{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{../figs/weights_reducible.pdf}
+\caption{Mean sampling weight per tier ($\times$ uniform). The gradient-norm
+sampler's largest target is the \emph{unlearnable} noise; the reducible scorer
+targets the learnable tier and ignores the noise.}
+\label{fig:redweights}
+\end{minipage}\hfill
+\begin{minipage}{0.48\textwidth}
+\centering
+\includegraphics[width=\textwidth]{../figs/curves_reducible.pdf}
+\caption{Learnable-subset loss vs budget (mean $\pm$ s.d., 5 seeds). The reducible
+sampler reaches it several times faster; the gradient-norm sampler, distracted by
+noise, barely improves on uniform.}
+\label{fig:reducible}
+\end{minipage}
+\end{figure}
+
 \section{Limitations}
 The experiment is deliberately small and controlled (a char-level MLP on
 synthetic data, CPU-only, pure NumPy) to make the mechanism and the
@@ -658,6 +754,11 @@ A.~Katharopoulos and F.~Fleuret.
 sampling.
 \newblock In \emph{ICML}, 2018.
 
+\bibitem[Koh \& Liang(2017)]{koh2017}
+P.~W.~Koh and P.~Liang.
+\newblock Understanding black-box predictions via influence functions.
+\newblock In \emph{ICML}, 2017.
+
 \bibitem[Kumar et al.(2010)]{kumar2010}
 M.~P.~Kumar, B.~Packer, and D.~Koller.
 \newblock Self-paced learning for latent variable models.
@@ -672,6 +773,12 @@ T.-Y.~Lin, P.~Goyal, R.~Girshick, K.~He, and P.~Doll\'ar.
 I.~Loshchilov and F.~Hutter.
 \newblock Online batch selection for faster training of neural networks.
 \newblock \emph{arXiv:1511.06343}, 2015.
+
+\bibitem[Mindermann et al.(2022)]{mindermann2022}
+S.~Mindermann, J.~Brauner, M.~Razzak, et al.
+\newblock Prioritized training on points that are learnable, worth learning, and
+not yet learnt (RHO-LOSS).
+\newblock In \emph{ICML}, 2022.
 
 \bibitem[Mnih \& Gregor(2014)]{mnih2014}
 A.~Mnih and K.~Gregor.
@@ -693,6 +800,16 @@ Kaczmarz algorithm.
 A.~B.~Owen.
 \newblock \emph{Monte Carlo Theory, Methods and Examples}.
 \newblock 2013. \url{https://artowen.su.domains/mc/}.
+
+\bibitem[Pruthi et al.(2020)]{pruthi2020}
+G.~Pruthi, F.~Liu, S.~Kale, and M.~Sundararajan.
+\newblock Estimating training data influence by tracing gradient descent (TracIn).
+\newblock In \emph{NeurIPS}, 2020.
+
+\bibitem[Ren et al.(2018)]{ren2018}
+M.~Ren, W.~Zeng, B.~Yang, and R.~Urtasun.
+\newblock Learning to reweight examples for robust deep learning.
+\newblock In \emph{ICML}, 2018.
 
 \bibitem[Rubinstein \& Kroese(2004)]{rubinstein2004}
 R.~Y.~Rubinstein and D.~P.~Kroese.
@@ -726,6 +843,11 @@ R.~J.~Williams.
 \newblock Simple statistical gradient-following algorithms for connectionist
 reinforcement learning.
 \newblock \emph{Machine Learning}, 8:229--256, 1992.
+
+\bibitem[Xie et al.(2023)]{xie2023}
+S.~M.~Xie, H.~Pham, X.~Dong, et al.
+\newblock DoReMi: Optimizing data mixtures speeds up language model pretraining.
+\newblock In \emph{NeurIPS}, 2023.
 
 \bibitem[Zhao \& Zhang(2015)]{zhao2015}
 P.~Zhao and T.~Zhang.

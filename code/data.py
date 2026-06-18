@@ -195,6 +195,84 @@ def hard_example_mask(char_is_hard, context=8):
     return char_is_hard[context:context + N]
 
 
+def _codebook(alphabet, n_patterns, fixed_seed=12345):
+    """K distinct deterministic phrases over a given alphabet (fixed across seeds)."""
+    rng = np.random.default_rng(fixed_seed)
+    alpha = list(alphabet)
+    phrases, seen = [], set()
+    while len(phrases) < n_patterns:
+        L = int(rng.integers(18, 28))
+        chars = []
+        for _ in range(L):
+            if chars and rng.random() < 0.18:
+                chars.append(" ")
+            else:
+                chars.append(alpha[rng.integers(len(alpha))])
+        p = "".join(chars).strip()
+        if p and p not in seen:
+            seen.add(p); phrases.append(p + " ")
+    return phrases
+
+
+def make_corpus_reducible(n_chars=200_000, seed=0, easy_frac=0.90,
+                          learn_frac=0.05, n_learn_patterns=6):
+    """Corpus where high gradient does NOT imply learnable.
+
+    Three tiers, with the two HIGH-GRADIENT tiers placed in disjoint content
+    regions so a content-aware scorer can separate them but a gradient-norm
+    sampler cannot:
+      - tier 0, easy (~easy_frac): deterministic common-letter phrases (low grad).
+      - tier 1, learnable-hard (~learn_frac): a FIXED codebook of deterministic
+        phrases in rare-letter set A = {j,k,q,v} -- high gradient, *reducible*
+        (a step on one generalises to the others).
+      - tier 2, noise (~rest): freshly-RANDOM tokens in disjoint set B = {w,x,z},
+        regenerated every occurrence -- high gradient, *irreducible* (a step on one
+        does not transfer to held-out data).
+
+    Returns (data, vocab, stoi, tier) with tier a per-character label in {0,1,2}.
+    """
+    rng = np.random.default_rng(seed)
+    vocab = list("abcdefghijklmnopqrstuvwxyz .")
+    stoi = {c: i for i, c in enumerate(vocab)}
+
+    easy_phrases = [
+        "the cat sat on the mat. ",
+        "a dog ran to the den. ",
+        "she sells sea shells. ",
+        "the sun is on the hill. ",
+        "ned has ten red hens. ",
+    ]
+    set_A = "jkqv"          # learnable-hard alphabet (fixed codebook)
+    set_B = "wxz"           # noise alphabet (random)
+    learn_phrases = _codebook(set_A, n_learn_patterns)
+
+    out, tier = [], []
+    while len(out) < n_chars:
+        r = rng.random()
+        if r < easy_frac:
+            w = easy_phrases[rng.integers(len(easy_phrases))]
+            out.extend(w); tier.extend([0] * len(w))
+        elif r < easy_frac + learn_frac:
+            w = learn_phrases[rng.integers(len(learn_phrases))]
+            out.extend(w); tier.extend([1] * len(w))
+        else:
+            k = rng.integers(18, 28)
+            seg = [set_B[rng.integers(len(set_B))] if rng.random() >= 0.18 else " "
+                   for _ in range(int(k))]
+            seg = list("".join(seg).strip()) + [" "]
+            out.extend(seg); tier.extend([2] * len(seg))
+    text = "".join(out)[:n_chars]
+    data = np.array([stoi[c] for c in text], dtype=np.int64)
+    tier = np.array(tier[:n_chars], dtype=np.int64)
+    return data, vocab, stoi, tier
+
+
+def tier_example_mask(tier, context=8):
+    """Per-example tier labels aligned with build_examples() targets."""
+    N = len(tier) - context
+    return tier[context:context + N]
+
+
 def build_examples(data, context=8):
     """Turn a 1-D stream into (X, y) of contexts and next-char targets."""
     N = len(data) - context
@@ -236,3 +314,21 @@ def reweighter_features(model, cache, y):
     sd = f[:, :4].std(axis=0, keepdims=True) + 1e-6
     f[:, :4] = (f[:, :4] - mu) / sd
     return f
+
+
+def reweighter_features_content(model, cache, y):
+    """Cheap features (reweighter_features) PLUS a content signature.
+
+    The content signature is the mean context embedding E[context].mean(axis=1)
+    (a model-aware, cheap, forward-pass byproduct). Unlike the loss/grad-norm
+    features -- which look the same for any high-loss example -- the embedding
+    encodes *which region of input space* the example lives in, so a scorer can
+    learn that one region is learnable and another is unlearnable noise. Returns
+    array (B, 5 + emb_dim).
+    """
+    cheap = reweighter_features(model, cache, y)         # (B, 5)
+    content = cache["emb"].mean(axis=1)                  # (B, D)
+    mu = content.mean(axis=0, keepdims=True)
+    sd = content.std(axis=0, keepdims=True) + 1e-6
+    content = (content - mu) / sd
+    return np.concatenate([cheap, content], axis=1)      # (B, 5 + D)

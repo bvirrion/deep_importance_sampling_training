@@ -105,12 +105,36 @@ while uniform is stable up to 3.0. A targeted tool for the rare-but-learnable
 regime. Run with `python3 -m code.run_experiment_biased` (writes `results_biased.json`
 and `figs/curves_biased.*`).
 
+## Fourth experiment: learning what remains to be learned (reducible improvement)
+
+Gradient norm can't tell a **hard-but-learnable** example from **hard-but-unlearnable
+noise** — both have big gradients, so a gradient-norm sampler chases the junk. Here
+the sampler is instead trained to estimate each input's **reducible improvement**:
+periodically we cluster the pool by content, take a step on each cluster, and
+measure how much it reduces loss on a held-out **learnable** reference set (RHO-LOSS
+/ realized-influence, amortized into the learned scorer). Corpus: 90% easy + 5%
+learnable-hard + 5% random noise (disjoint letter sets). 5 seeds:
+
+| Sampler (biased)             | Targets noise | Targets learnable | Learnable loss | Speed-up vs uniform |
+|------------------------------|---------------|-------------------|----------------|---------------------|
+| Grad-norm                    | **2.5× (!)**  | 0.3×              | 0.305 *(≈uniform)* | 2.2×            |
+| **Reducible (ours)**         | 0.9×          | **1.6×**          | **0.260**      | **4.2×**            |
+
+The gradient-norm sampler's **biggest target is the unlearnable noise**, so it ends
+up no better than uniform on the learnable capability. The reducible scorer learns
+to **ignore the noise** and focus on the learnable tier, reaching that capability
+~4.2× faster than uniform (and ~1.9× faster than gradnorm). Cost: a few reference
+evals per burst + a held-out set defining the target capability. Run with
+`python3 -m code.run_experiment_reducible` (writes `results_reducible.json`,
+`figs/curves_reducible.*`, `figs/weights_reducible.*`).
+
 ## Reproduce
 
 ```bash
 python3 -m code.run_experiment                # main graded-difficulty experiment
 python3 -m code.run_experiment_concentrated   # concentrated 99%/1% experiment
 python3 -m code.run_experiment_biased         # biased-sampling variant + lr sweep
+python3 -m code.run_experiment_reducible      # reducible-improvement sampler
 cd paper
 pdflatex paper.tex && pdflatex paper.tex
 ```
