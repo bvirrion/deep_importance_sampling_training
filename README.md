@@ -1,4 +1,4 @@
-# Learned Importance Reweighting for SGD Training
+# Learned Importance Sampling for SGD: From Gradient Norm to Reducible Improvement
 
 This bundle contains a short research paper and a fully self-contained,
 reproducible implementation of the idea we discussed: **replacing a fixed
@@ -7,13 +7,18 @@ maps the batch to a change of measure, is trained online to sample more where th
 gradient is larger, and is amortised by *periodic refresh*** (meta-trained in
 short bursts, otherwise used frozen without recomputing gradient norms).
 
+The accompanying paper is **"Learned Importance Sampling for SGD: From Gradient
+Norm to Reducible Improvement"** (Benjamin Virrion & Claude Opus 4.8, v0.1),
+included as `paper/paper.pdf`. Code and paper are available
+at <https://github.com/bvirrion/deep_importance_sampling_training>.
+
 ## What's here
 
 ```
 paper/paper.tex      LaTeX source of the paper
-paper/paper.pdf      Compiled paper (7 pages)
+paper/paper.pdf      Compiled paper (15 pages)
 code/model.py        Char-level LM in pure NumPy with per-example gradients
-code/data.py         Synthetic graded multi-tier difficulty corpus + reweighter features
+code/data.py         Synthetic graded multi-tier difficulty corpus + sampler features
 code/reweighter.py   The learned proposal q_phi and its (stable) meta-update
 code/train.py        The three training conditions + amortised deployment
 code/run_experiment.py  Multi-seed A/B/C runner; writes results.json + figures
@@ -45,7 +50,7 @@ train_log.txt        Full training log
 
 On this harder, graded-difficulty corpus the task does **not** saturate within
 the budget, so the importance-sampling benefit persists to the final loss. The
-learned reweighter reaches the **lowest** final loss — significantly below uniform
+learned sampler reaches the **lowest** final loss — significantly below uniform
 (paired `t=3.66`) and within noise of the every-step heuristic (`t=2.42`) — and is
 also more **sample-efficient**, reaching the target loss with ~18–20% fewer
 gradient examples than uniform. It does all this while computing the expensive
@@ -77,7 +82,7 @@ many more examples uniform needs to reach it.
 **Uniform SGD needs ~1.5–1.7× more training examples than the importance samplers
 to reach the same hard-subset loss** (the multiplier grows as the target tightens).
 Both IS methods significantly beat uniform (paired `t≈3.2`) and the learned
-reweighter matches the every-step oracle (`t=0.2`). Since the update is unbiased,
+sampler matches the every-step oracle (`t=0.2`). Since the update is unbiased,
 this is a pure variance-reduction *speed-up* — it shows up as sample efficiency on
 the rare tier, not as a different converged loss. Run with
 `python3 -m code.run_experiment_concentrated` (writes `results_concentrated.json`

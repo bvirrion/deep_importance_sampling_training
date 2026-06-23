@@ -16,8 +16,8 @@
 \newtheorem{proposition}{Proposition}
 \newtheorem{remark}{Remark}
 
-\title{\textbf{Learned Importance Reweighting for Stochastic Gradient
-Training:\\ Amortising the Variance-Optimal Proposal}}
+\title{\textbf{Learned Importance Sampling for SGD:\\ From Gradient Norm to
+Reducible Improvement}}
 \author{Benjamin Virrion \and Claude Opus 4.8\thanks{Anthropic.}}
 \date{Version 0.1 \\[2pt] June 23, 2026}
 
@@ -52,7 +52,9 @@ noise the gradient-norm sampler actively chases}, reaching the target capability
 $\sim\!4.2\times$ faster than uniform and $\sim\!1.9\times$ faster than the
 gradient-norm sampler---which, by chasing noise, ends no better than uniform. We
 give the unbiasedness argument, the stability analysis, and a fully
-self-contained NumPy implementation with an evaluation harness, and position the
+self-contained NumPy implementation with an evaluation harness,\footnote{Code
+available at \url{https://github.com/bvirrion/deep_importance_sampling_training}.}
+and position the
 method as the stochastic-optimisation analogue of a learned Girsanov change of
 measure used for variance reduction in path-dependent Monte Carlo
 \citep{virrion2020}.
@@ -94,7 +96,7 @@ $q_\phi$ over cheap features and build, in stages, from variance reduction to
 reducible-improvement sampling:
 \begin{enumerate}
 \item \textbf{Learned proposal and unbiasedness (substrate).} We formulate the
-learned reweighter---a small network mapping the candidate batch to a change of
+learned sampler---a small network mapping the candidate batch to a change of
 measure over it---and prove the importance-weighted update it induces is unbiased
 for any strictly positive proposal (Proposition~\ref{prop:unbiased}), so it can
 only change variance, not the expected trajectory.
@@ -104,7 +106,7 @@ per-sample cost spans many orders of magnitude and $\phi$ diverges in a feedback
 loop with the proposal---and replace it with a convex distribution-matching
 objective ($\mathrm{KL}(p^\star \,\|\, q_\phi)$) with the same optimum and
 well-behaved dynamics.
-\item \textbf{Amortisation by periodic refresh.} The reweighter is meta-trained
+\item \textbf{Amortisation by periodic refresh.} The sampler is meta-trained
 in short bursts and otherwise used from cheap features alone, so the expensive
 gradient-norm target is computed on only $\sim\!10\%$ of steps---a $90\%$
 reduction in selection passes---while the unbiased variant still matches the
@@ -240,15 +242,15 @@ average of $B$ i.i.d.\ unbiased terms is unbiased.
 
 Thus the choice of $p$ affects only $\mathrm{Var}(\hat g)$. The total-variance
 minimiser among all proposals is $p^\star_i \propto \|g_i\|$
-\citep{alain2015,katharopoulos2018}; we take that as the target the reweighter
+\citep{alain2015,katharopoulos2018}; we take that as the target the sampler
 should reproduce from cheap features.
 
-\subsection{The learned reweighter}
+\subsection{The learned sampler}
 We attach to each pool example a feature vector $x_i\in\mathbb{R}^F$ whose entries
 are byproducts of the forward pass already required to sample: the current loss,
 a logit-gradient-norm proxy $\|\partial \mathcal L_i/\partial \text{logits}\|$,
 the predictive entropy, the max predicted probability, and a bias term. The
-reweighter is a small neural network---a three-hidden-layer MLP shared across
+sampler is a small neural network---a three-hidden-layer MLP shared across
 pool examples, followed by a softmax over the pool,
 \begin{align}
 h_i^{(1)} &= \tanh(W_1^\top x_i + b_1), \qquad
@@ -309,10 +311,10 @@ fraction of steps. This is where the learned proposal earns its keep relative to
 the fixed heuristic, which must recompute its proxy \emph{every} step.
 
 \begin{algorithm}[t]
-\caption{Training with a learned, periodically-refreshed reweighter network}
+\caption{Training with a learned, periodically-refreshed sampler network}
 \label{alg:main}
 \begin{algorithmic}[1]
-\State \textbf{input:} model $\theta$, reweighter network $\phi$, pool size $n$,
+\State \textbf{input:} model $\theta$, sampler network $\phi$, pool size $n$,
 batch $B$, lr $\eta$, meta-lr $\beta$, refresh period $R$, burst length $T_b$
 \For{$t=1,2,\dots$}
   \State sample candidate pool of $n$ examples
@@ -352,7 +354,7 @@ examples consumed $=$ steps $\times$ batch):
 \emph{(i) Uniform} standard SGD;
 \emph{(ii) Grad-norm IS}, the fixed heuristic, sampling the minibatch from the
 pool with $p\propto\|g\|$ proxy every step;
-\emph{(iii) Learned (ours)}, Algorithm~\ref{alg:main}, a neural reweighter on a
+\emph{(iii) Learned (ours)}, Algorithm~\ref{alg:main}, a neural sampler on a
 periodic-refresh schedule (burst $T_b=100$, period $R=1000$, over $4000$ steps),
 so it meta-trains during only $4\times100=400$ steps and is otherwise frozen.
 We report mean $\pm$ s.d.\ over $5$ seeds.
@@ -361,7 +363,7 @@ We report mean $\pm$ s.d.\ over $5$ seeds.
 the outcome. Unlike the saturating task of earlier experiments, this harder
 corpus does \emph{not} bottom out within the $4000$-step budget, so the benefit
 of importance sampling now persists all the way to the final loss. The learned
-reweighter attains the lowest final validation loss, $0.521\pm0.035$, against
+sampler attains the lowest final validation loss, $0.521\pm0.035$, against
 $0.526\pm0.031$ for the fixed heuristic and $0.533\pm0.036$ for uniform SGD. The
 improvement over uniform is statistically significant (paired over 5 seeds,
 $\Delta=0.011$, $t=3.66$), while the gap to the every-step heuristic is within
@@ -382,7 +384,7 @@ refresh bursts it samples from cheap features alone.
 \begin{table}[t]
 \centering
 \caption{Top: final validation loss (nats/char), mean $\pm$ s.d.\ over 5 seeds,
-at a matched budget of $512{,}000$ gradient examples; the learned reweighter is
+at a matched budget of $512{,}000$ gradient examples; the learned sampler is
 lowest, significantly below uniform ($t=3.66$) and on par with the heuristic
 ($t=2.42$, within noise). Bottom: sample efficiency---gradient examples
 (thousands) needed to first reach a target validation loss of $0.553$ (reached in
@@ -402,7 +404,7 @@ Examples to $0.553$ ($\times10^3$) & $243$ & $\mathbf{194}$ & $199$ \\
 \begin{table}[t]
 \centering
 \caption{Selection overhead: number of expensive per-example gradient-norm pool
-passes required over a $4000$-step run. The learned reweighter meta-trains only
+passes required over a $4000$-step run. The learned sampler meta-trains only
 during $4$ refresh bursts of $100$ steps.}
 \label{tab:overhead}
 \begin{tabular}{lcc}
@@ -419,7 +421,7 @@ Reduction & --- & $\mathbf{90\%}$ \\
 \centering
 \includegraphics[width=0.78\textwidth]{../figs/curves.pdf}
 \caption{Validation loss versus compute budget (mean $\pm$ s.d., 5 seeds). The
-learned reweighter tracks the baselines while spending gradient-norm passes on
+learned sampler tracks the baselines while spending gradient-norm passes on
 only the periodic refresh bursts; between bursts it samples from cheap features
 alone.}
 \label{fig:curves}
@@ -429,7 +431,7 @@ alone.}
 \centering
 \includegraphics[width=0.62\textwidth]{../figs/phi.pdf}
 \caption{Network input saliency, $\mathbb{E}_{\text{pool}}\,|\partial s/\partial
-x_k|$ per feature (mean over seeds). Since the reweighter is nonlinear there is no
+x_k|$ per feature (mean over seeds). Since the sampler is nonlinear there is no
 single weight to plot; saliency is the analogue. The gradient-norm feature has
 the largest saliency, with predictive entropy close behind, showing the network
 recovers the variance-optimal signal $p^\star \propto \|g\|$ from cheap
@@ -491,7 +493,7 @@ examples as either importance sampler, and the multiplier grows as the target
 tightens. At the matched final budget the hard-subset loss is $0.54\pm0.11$
 (uniform) versus $0.40\pm0.05$ (grad-norm IS) and $0.39\pm0.03$ (learned); both
 importance samplers significantly beat uniform (paired over 5 seeds, $t=3.2$),
-and here the learned reweighter \emph{matches} the every-step oracle ($t=0.2$,
+and here the learned sampler \emph{matches} the every-step oracle ($t=0.2$,
 within noise) while still computing the gradient-norm target on only $10\%$ of
 steps (Figure~\ref{fig:concentrated}). This is the regime where concentrating
 the sampling effort pays off most.
@@ -564,7 +566,7 @@ the rate used throughout ($\eta=0.5$) all methods are stable, but the biased
 samplers \emph{diverge} for every $\eta\ge1.0$ (3/3 seeds), whereas uniform SGD
 (and the unbiased samplers) remain stable up to $\eta=3.0$. The biased variant
 therefore demands a conservatively small step size. We read biased sampling as the
-aggressive complement to the unbiased reweighter: far faster where the pain is
+aggressive complement to the unbiased sampler: far faster where the pain is
 rare and learnable, at the price of unbiasedness and a narrower stable-rate range.
 
 \begin{table}[t]
@@ -738,7 +740,7 @@ The experiment is deliberately small and controlled (a char-level MLP on
 synthetic data, CPU-only, pure NumPy) to make the mechanism and the
 stability analysis transparent and fully reproducible; we do not claim
 wall-clock gains at scale. The gradient-norm proxy is the logit-space norm rather
-than the full parameter-gradient norm. The reweighter is a three-hidden-layer MLP
+than the full parameter-gradient norm. The sampler is a three-hidden-layer MLP
 over a handful of features; richer features or a still larger network may capture
 difficulty structure that the fixed heuristic misses, which is the most promising
 route to \emph{exceeding} rather than merely approximating the heuristic. Finally, the
@@ -748,12 +750,14 @@ on that trade-off (shorter, rarer bursts save more compute but let the proposal
 drift further from $p^\star$ between refreshes).
 
 \section{Conclusion}
-We presented a learned, amortised importance-reweighting scheme for SGD that
+We presented a learned, amortised importance-sampling scheme for SGD that
 replaces a fixed gradient-norm heuristic with a small proposal network trained by
 a stable, convex distribution-matching meta-objective. It preserves unbiasedness
 exactly, recovers the variance-optimal signal from cheap features, and removes
 $90\%$ of the expensive selection passes by reusing the proposal between periodic
-refreshes.
+refreshes; pushed further, a biased reducible-improvement variant learns to focus
+on learnable data and ignore unlearnable noise. A fully self-contained NumPy
+implementation and evaluation harness are available \citep{thiscode}.
 The viewpoint---learn a sampling distribution that concentrates effort where the
 integrand is large while reweighting to preserve the expectation---ports directly
 from adaptive importance sampling for path-dependent Monte Carlo
@@ -897,6 +901,12 @@ S.~U.~Stich, A.~Raj, and M.~Jaggi.
 B.~Virrion.
 \newblock Deep importance sampling.
 \newblock \emph{arXiv:2007.02692}, 2020.
+
+\bibitem[Virrion \& Claude Opus 4.8(2026)]{thiscode}
+B.~Virrion and Claude Opus 4.8.
+\newblock Deep importance sampling training (code repository).
+\newblock 2026.
+\newblock \url{https://github.com/bvirrion/deep_importance_sampling_training}.
 
 \bibitem[Williams(1992)]{williams1992}
 R.~J.~Williams.
