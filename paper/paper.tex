@@ -18,42 +18,44 @@
 
 \title{\textbf{Learned Importance Reweighting for Stochastic Gradient
 Training:\\ Amortising the Variance-Optimal Proposal}}
-\author{}
-\date{}
+\author{Benjamin Virrion \and Claude Opus 4.8\thanks{Anthropic.}}
+\date{Version 0.1 \\[2pt] June 23, 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Importance sampling of minibatches can reduce the variance of the stochastic
-gradient estimator and thereby accelerate training, but the variance-optimal
-proposal---sampling each example in proportion to its gradient norm---requires a
-per-example gradient computation over a candidate pool at \emph{every} step,
-which is precisely the cost one is trying to save. We study replacing this fixed
-heuristic with a small \emph{neural network} $q_\phi$ that maps the candidate
-batch---through cheap, forward-pass byproduct features (current loss, a
-logit-gradient-norm proxy, predictive entropy, confidence)---to a sampling
-proposal, i.e.\ a learned change of measure over the batch. The network is
-trained online by matching its proposal to the variance-optimal distribution
-through a convex cross-entropy meta-objective that concentrates sampling on
-high-gradient examples, and is then \emph{periodically refreshed}: it is
-meta-trained in short bursts and otherwise supplies an importance-sampling
-proposal from cheap features alone---without recomputing gradient norms---each
-refresh warm-started from the previous state so it tracks the model's drifting
-notion of difficulty. On a controlled char-level language modelling task with
-graded, heterogeneous example difficulty, the learned reweighter statistically
-matches the oracle gradient-norm heuristic---and significantly beats uniform
-SGD on final loss---while eliminating $90\%$ of the expensive per-example
-gradient-norm passes. In a more extreme regime where the informative examples are
-a rare ($\sim\!1\%$) hard minority, the benefit sharpens into sample efficiency:
-uniform SGD needs about $1.5$--$1.7\times$ as many gradient examples to reach the
-same loss on the hard subset. We give the
-unbiasedness argument for the importance-weighted update, describe a stabilised
-meta-update (an earlier raw variance-minimising REINFORCE update diverges, and we
-explain why), and release a fully self-contained NumPy implementation with an
-A/B/C evaluation harness. We position the method as the stochastic-optimisation
-analogue of a learned Girsanov change of measure used for variance reduction in
-path-dependent Monte Carlo \citep{virrion2020}.
+Importance sampling of minibatches can accelerate training, and the
+variance-optimal proposal is classical: sample each example in proportion to its
+gradient norm $\|g\|$. But $\|g\|$ conflates two very different things---examples
+that are \emph{hard and learnable} and examples that are \emph{hard and
+unlearnable} (noise, mislabelled or corrupted data). Both have large gradients,
+so a gradient-norm sampler preferentially feeds the model its noisiest data. We
+argue the quantity worth targeting is not gradient magnitude but \emph{reducible
+improvement}---how much training on an input actually lowers loss on data one
+cares about---and that a small network can be trained, online, to estimate it and
+amortise it as a learned data scorer. We build to this in stages. As the
+substrate we introduce a learned proposal $q_\phi$: a small neural network that
+maps the candidate batch---through cheap, forward-pass byproduct features (loss, a
+logit-gradient-norm proxy, predictive entropy, confidence)---to a change of
+measure over the batch. It is trained by a \emph{stable convex} cross-entropy
+meta-objective (the natural variance-minimising REINFORCE update diverges, and we
+explain why), and \emph{periodically refreshed}---meta-trained in short bursts and
+otherwise used from cheap features alone---so that the expensive target need only
+be computed on $\sim\!10\%$ of steps. With an importance-weighted, \emph{unbiased}
+update this matches the every-step gradient-norm oracle while removing $90\%$ of
+its selection passes; \emph{dropping} the debiasing weights yields a faster biased
+hard-example-mining variant. The headline is the final stage: a \emph{biased
+reducible-improvement sampler}, trained on measured held-out improvement rather
+than gradient norm, concentrates on the learnable tier and \emph{ignores the
+noise the gradient-norm sampler actively chases}, reaching the target capability
+$\sim\!4.2\times$ faster than uniform and $\sim\!1.9\times$ faster than the
+gradient-norm sampler---which, by chasing noise, ends no better than uniform. We
+give the unbiasedness argument, the stability analysis, and a fully
+self-contained NumPy implementation with an evaluation harness, and position the
+method as the stochastic-optimisation analogue of a learned Girsanov change of
+measure used for variance reduction in path-dependent Monte Carlo
+\citep{virrion2020}.
 \end{abstract}
 
 \section{Introduction}
@@ -75,27 +77,48 @@ pool each step. This still pays a per-step pool cost, and it is \emph{fixed}: it
 cannot adapt to the model's changing notion of which examples are informative,
 and it cannot be reused.
 
-\paragraph{Contribution.} We replace the fixed heuristic with a \emph{learned},
-neural proposal $q_\phi$ over cheap features, trained so that sampling from it
-reduces estimator variance, and \emph{amortised by periodic refresh} so that the
-expensive gradient-norm target need only be computed during short, intermittent
-meta-training bursts. Concretely:
+\paragraph{From gradient norm to reducible improvement.} There is a deeper
+problem with the classical target than its cost. Sampling $\propto\|g_i\|$ is
+variance-optimal, but the gradient norm conflates examples that are \emph{hard and
+learnable} with examples that are \emph{hard and unlearnable}---noise, mislabelled
+or corrupted data, ubiquitous in web-scale corpora. Both have large gradients, yet
+only the first is worth training on, so a gradient-norm sampler preferentially
+feeds the model its noisiest data. The quantity actually worth targeting is not
+gradient magnitude but \emph{reducible} improvement: how much training on an input
+lowers loss on data one cares about. This reframing---from ``where is the gradient
+large'' to ``where is learning possible''---is the conceptual centre of this paper,
+and it turns out a small network can be trained online to estimate it.
+
+\paragraph{Contribution.} We develop a \emph{learned}, neural sampling proposal
+$q_\phi$ over cheap features and build, in stages, from variance reduction to
+reducible-improvement sampling:
 \begin{enumerate}
-\item We formulate the learned reweighter and prove the importance-weighted
-update it induces is unbiased for any strictly positive proposal
-(Proposition~\ref{prop:unbiased}), so the method can only change variance, not
-the expected optimisation trajectory.
-\item We give a \emph{stable} meta-objective. We first show that the natural
-``minimise the estimator variance directly by REINFORCE'' update is numerically
-unstable---the per-sample cost spans many orders of magnitude and $\phi$ diverges
-in a feedback loop with the proposal---and replace it with a convex
-distribution-matching objective ($\mathrm{KL}(p^\star \,\|\, q_\phi)$) that has
-the same optimum and well-behaved dynamics.
-\item We demonstrate amortisation by periodic refresh: the reweighter is
-meta-trained in short bursts and otherwise used frozen, so training proceeds with
-importance sampling from cheap features alone for the large majority of steps,
-removing $90\%$ of the gradient-norm passes while retaining most of the benefit
-and letting the proposal re-adapt to the model as it changes.
+\item \textbf{Learned proposal and unbiasedness (substrate).} We formulate the
+learned reweighter---a small network mapping the candidate batch to a change of
+measure over it---and prove the importance-weighted update it induces is unbiased
+for any strictly positive proposal (Proposition~\ref{prop:unbiased}), so it can
+only change variance, not the expected trajectory.
+\item \textbf{A stable meta-objective.} We show the natural ``minimise the
+estimator variance directly by REINFORCE'' update is numerically unstable---the
+per-sample cost spans many orders of magnitude and $\phi$ diverges in a feedback
+loop with the proposal---and replace it with a convex distribution-matching
+objective ($\mathrm{KL}(p^\star \,\|\, q_\phi)$) with the same optimum and
+well-behaved dynamics.
+\item \textbf{Amortisation by periodic refresh.} The reweighter is meta-trained
+in short bursts and otherwise used from cheap features alone, so the expensive
+gradient-norm target is computed on only $\sim\!10\%$ of steps---a $90\%$
+reduction in selection passes---while the unbiased variant still matches the
+every-step oracle and beats uniform.
+\item \textbf{Biased sampling for rare, learnable pain.} Dropping the debiasing
+weights turns the same change of measure into soft hard-example mining: faster
+where the informative examples are a rare minority (up to $5.4\times$), at the
+price of bias and a narrower stable learning-rate range.
+\item \textbf{Reducible-improvement sampling (headline).} We train the scorer on
+\emph{realized held-out improvement} rather than gradient magnitude. It learns to
+concentrate on the learnable tier and ignore unlearnable noise---the noise a
+gradient-norm sampler actively chases---reaching the target capability
+$\sim\!4.2\times$ faster than uniform and $\sim\!1.9\times$ faster than the
+gradient-norm sampler, which by chasing noise ends no better than uniform.
 \end{enumerate}
 
 \paragraph{Relation to a learned change of measure.} The construction is the
@@ -107,15 +130,16 @@ many pricings \citep{virrion2020}. The parallel is structural: there a neural
 network maps the past of a trajectory to a change of measure on path space; here
 a neural network maps the candidate batch (its per-example features) to a
 discrete change of measure over the batch. In both cases the change of measure
-leaves the target expectation invariant by construction and is optimised purely
-for variance---concentrating sampling where the integrand is large. The one
-honest qualifier is the training signal: rather than minimising estimator
-variance directly (which we show is unstable here, \S\ref{ssec:meta}), we train
-the network to reproduce the variance-optimal target $p^\star\propto\|g\|$, i.e.\
-to sample more where the gradient is larger, through a convex surrogate with the
-same optimum. The shared principle is: \emph{learn a sampling distribution that
-concentrates effort where the integrand is large, while reweighting to preserve
-the expectation.}
+leaves the target expectation invariant by construction and is optimised to steer
+sampling toward the region that matters. The one honest qualifier is the training
+signal: rather than minimising estimator variance directly (which we show is
+unstable here, \S\ref{ssec:meta}), we train the network to reproduce an explicit
+target through a convex surrogate---initially the variance-optimal
+$p^\star\propto\|g\|$, and ultimately the reducible-improvement target that
+distinguishes learnable from unlearnable data. The shared principle is:
+\emph{learn a sampling distribution that concentrates effort where it most helps
+the objective, while reweighting (or knowingly declining to) to control the
+expectation.}
 
 \section{Related Work}\label{sec:related}
 
@@ -153,6 +177,22 @@ cast data selection as a learned ``teacher'' policy. We share the learned-select
 idea but target the variance-optimal proposal with a convex, stable meta-objective
 and amortise it by periodic refresh, rather than learning an open-ended difficulty
 heuristic.
+
+\paragraph{Learnability- and influence-based selection.}
+A distinct line argues that the right thing to prioritise is not difficulty or
+gradient magnitude but how much an example will actually \emph{reduce} the loss one
+cares about, precisely because high loss (or high gradient) can come from
+irreducible noise. RHO-LOSS \citep{mindermann2022} selects points that are
+learnable, worth learning, and not yet learnt, using a held-out reference model to
+estimate reducible loss. The notion of an example's realized effect on a target
+objective is made precise by influence functions \citep{koh2017} and by tracing
+gradient descent (TracIn) \citep{pruthi2020}, and learned data weighting appears in
+robust example reweighting \citep{ren2018} and in domain reweighting for language
+model pretraining (DoReMi) \citep{xie2023}. Our reducible-improvement sampler
+(\S\ref{ssec:reducible}) sits squarely in this line: it trains the proposal network
+to estimate \emph{measured} held-out improvement online and amortise it as a learned
+data scorer, and we show directly that this sidesteps the gradient-norm sampler's
+failure mode of chasing unlearnable noise.
 
 \paragraph{Adaptive and neural importance sampling for Monte Carlo.}
 Outside optimisation, adaptively learning a change of measure to reduce
